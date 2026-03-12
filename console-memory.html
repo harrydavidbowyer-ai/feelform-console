@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>FeelForm Console + Memory</title>
+  <style>
+    body {
+      background: #05060a;
+      color: #f5f5f5;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      height: 100vh;
+    }
+
+    .sidebar {
+      width: 220px;
+      background: #0b0d14;
+      border-right: 1px solid #1b1e2a;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    .tab {
+      padding: 8px 12px;
+      margin-bottom: 6px;
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 13px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #a5acc4;
+    }
+
+    .tab.active {
+      background: #151827;
+      color: #ffffff;
+    }
+
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    .panel-row {
+      display: flex;
+      gap: 16px;
+      flex: 1;
+    }
+
+    .panel {
+      flex: 1;
+      background: #0b0f18;
+      border: 1px solid #1b2130;
+      border-radius: 6px;
+      padding: 12px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel h2 {
+      margin: 0 0 8px 0;
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #7f8bb0;
+    }
+
+    .panel pre {
+      flex: 1;
+      margin: 0;
+      padding: 8px;
+      background: #05070d;
+      border-radius: 4px;
+      font-size: 11px;
+      overflow: auto;
+    }
+
+    .inputs {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .inputs label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #7f8bb0;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .inputs input,
+    .inputs textarea {
+      width: 100%;
+      box-sizing: border-box;
+      background: #05070d;
+      border: 1px solid #1b2130;
+      border-radius: 4px;
+      color: #f5f5f5;
+      font-size: 12px;
+      padding: 6px 8px;
+      resize: vertical;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .btn {
+      padding: 6px 12px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      border-radius: 4px;
+      border: 1px solid #3b82f6;
+      background: #0b1020;
+      color: #dbeafe;
+      cursor: pointer;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+
+    .status {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-left: 8px;
+      align-self: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <div id="memory-tab" class="tab active">Memory</div>
+  </div>
+
+  <div class="main">
+    <div class="inputs">
+      <div>
+        <label for="pulse-input">Pulse</label>
+        <input id="pulse-input" type="text" />
+      </div>
+      <div>
+        <label for="somatic-input">Somatic</label>
+        <input id="somatic-input" type="text" />
+      </div>
+      <div>
+        <label for="amplitude-input">Amplitude</label>
+        <input id="amplitude-input" type="number" step="0.01" />
+      </div>
+      <div>
+        <label for="reflection-input">Reflection</label>
+        <textarea id="reflection-input" rows="2"></textarea>
+      </div>
+      <div>
+        <label for="decision-input">Decision</label>
+        <textarea id="decision-input" rows="2"></textarea>
+      </div>
+      <div>
+        <label for="identity-input">Identity</label>
+        <textarea id="identity-input" rows="2"></textarea>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button id="complete-cycle" class="btn">Complete Cycle</button>
+      <span id="status" class="status"></span>
+    </div>
+
+    <div class="panel-row">
+      <div class="panel">
+        <h2>Identity</h2>
+        <pre id="identity-view">{}</pre>
+      </div>
+      <div class="panel">
+        <h2>Trajectory</h2>
+        <pre id="trajectory-view">{}</pre>
+      </div>
+      <div class="panel">
+        <h2>Meta</h2>
+        <pre id="meta-view">{}</pre>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ============================================================
+       FeelForm OS — Memory Engine Front-End Integration
+       Merged Console + Memory
+       ============================================================ */
+
+    const API_BASE = "https://YOUR-RENDER-URL.onrender.com"; 
+    // Replace with your actual Render URL after deployment
+
+    async function sendCycle(data) {
+      try {
+        const res = await fetch(\`\${API_BASE}/api/session\`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        });
+        return await res.json();
+      } catch (err) {
+        console.error("Error writing session:", err);
+        return null;
+      }
+    }
+
+    async function loadMemory() {
+      try {
+        const res = await fetch(\`\${API_BASE}/api/memory\`);
+        return await res.json();
+      } catch (err) {
+        console.error("Error loading memory:", err);
+        return null;
+      }
+    }
+
+    async function refreshMemoryTab() {
+      const memory = await loadMemory();
+      if (!memory) return;
+
+      const identityEl = document.querySelector("#identity-view");
+      const trajectoryEl = document.querySelector("#trajectory-view");
+      const metaEl = document.querySelector("#meta-view");
+
+      if (identityEl) identityEl.textContent = JSON.stringify(memory.identity, null, 2);
+      if (trajectoryEl) trajectoryEl.textContent = JSON.stringify(memory.trajectory, null, 2);
+      if (metaEl) metaEl.textContent = JSON.stringify(memory.meta, null, 2);
+    }
+
+    function collectCycleData() {
+      const pulse = document.querySelector("#pulse-input")?.value || "";
+      const somatic = document.querySelector("#somatic-input")?.value || "";
+      const reflection = document.querySelector("#reflection-input")?.value || "";
+      const decision = document.querySelector("#decision-input")?.value || "";
+      const identity = document.querySelector("#identity-input")?.value || "";
+      const amplitude = parseFloat(document.querySelector("#amplitude-input")?.value || 0);
+      return { pulse, somatic, reflection, decision, identity, amplitude };
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const memoryTab = document.querySelector("#memory-tab");
+      const completeBtn = document.querySelector("#complete-cycle");
+      const statusEl = document.querySelector("#status");
+
+      if (memoryTab) {
+        memoryTab.addEventListener("click", () => {
+          refreshMemoryTab();
+        });
+      }
+
+      if (completeBtn) {
+        completeBtn.addEventListener("click", () => {
+          const payload = collectCycleData();
+          statusEl.textContent = "Saving…";
+          completeBtn.disabled = true;
+
+          sendCycle(payload).then(result => {
+            statusEl.textContent = result ? "Saved. Refreshing memory…" : "Error saving.";
+            if (result) {
+              refreshMemoryTab();
+            }
+            setTimeout(() => {
+              statusEl.textContent = "";
+              completeBtn.disabled = false;
+            }, 1200);
+          });
+        });
+      }
+
+      // initial load
+      refreshMemoryTab();
+    });
+  </script>
+</body>
+</html>
