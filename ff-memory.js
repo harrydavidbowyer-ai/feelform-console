@@ -1,7 +1,16 @@
 /* ============================================================
    FeelForm OS — Memory Engine Front-End Module
    ============================================================ */
+import cors from "cors";
 
+app.use(cors({
+  origin: [
+    "https://harrydavidbowyer-ai.github.io",
+    "http://localhost:3000"
+  ],
+  methods: ["GET", "POST"],
+  allowedHeaders: ["Content-Type"]
+}));
 const FF_API_BASE = "https://feelform-console.onrender.com";
 
 /* ---------- API LAYER ---------- */
