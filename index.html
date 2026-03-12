@@ -21,6 +21,29 @@
     <div id="nav-ritual"     class="ff-nav-glyph"></div>
   </div>
 
+  <!-- OVERLAY LAYER (cinematic UI) -->
+  <div id="ff-overlay">
+    <!-- Threshold bar -->
+    <div id="ff-threshold-bar-wrap" class="ff-overlay-block">
+      <div id="ff-threshold-bar">
+        <div id="ff-threshold-handle"></div>
+      </div>
+      <div class="ff-overlay-label">drag to cross threshold</div>
+    </div>
+
+    <!-- Pulse orb -->
+    <div id="ff-pulse-orb-wrap" class="ff-overlay-block">
+      <div id="ff-pulse-orb"></div>
+      <div class="ff-overlay-label">pulse</div>
+    </div>
+
+    <!-- Ritual completion glow -->
+    <div id="ff-ritual-glow-wrap" class="ff-overlay-block">
+      <div id="ff-ritual-glow"></div>
+      <div class="ff-overlay-label">completion</div>
+    </div>
+  </div>
+
   <!-- CHAMBERS WRAPPER -->
   <div id="ff-chambers">
 
@@ -28,13 +51,16 @@
       <div class="ff-chamber-inner">
         <h1>Baseline</h1>
         <p>Arrive. Notice what is here without changing it.</p>
+        <button id="ff-baseline-arrive" class="ff-btn ff-btn-primary">
+          I’m here
+        </button>
       </div>
     </div>
 
     <div id="ch-threshold" class="ff-chamber">
       <div class="ff-chamber-inner">
         <h1>Threshold</h1>
-        <p>Standing at the edge of a shift.</p>
+        <p>Standing at the edge of a shift. Drag the bar to cross.</p>
       </div>
     </div>
 
@@ -42,6 +68,7 @@
       <div class="ff-chamber-inner">
         <h1>Pulse</h1>
         <p>What is alive in you right now?</p>
+        <input id="ff-pulse-input" placeholder="What’s alive in you?">
       </div>
     </div>
 
@@ -49,6 +76,18 @@
       <div class="ff-chamber-inner">
         <h1>Somatic</h1>
         <p>Where does this live in your body?</p>
+        <select id="ff-somatic-location">
+          <option value="">Choose a region…</option>
+          <option value="chest">Chest</option>
+          <option value="gut">Gut</option>
+          <option value="throat">Throat</option>
+          <option value="head">Head</option>
+        </select>
+        <label class="ff-slider-label">
+          Intensity
+          <input id="ff-somatic-intensity" type="range" min="0" max="100" value="30">
+        </label>
+        <div id="ff-somatic-output" class="ff-output-line"></div>
       </div>
     </div>
 
@@ -56,6 +95,7 @@
       <div class="ff-chamber-inner">
         <h1>Reflection</h1>
         <textarea id="ff-reflect-input" placeholder="Write what you’re noticing..."></textarea>
+        <button id="ff-reflect-distill" class="ff-btn">Distill</button>
         <div id="ff-reflect-output" class="ff-output-line"></div>
       </div>
     </div>
@@ -65,6 +105,7 @@
         <h1>Decision</h1>
         <input id="ff-decision-a" placeholder="Path A">
         <input id="ff-decision-b" placeholder="Path B">
+        <button id="ff-decision-eval" class="ff-btn">Evaluate</button>
         <div id="ff-decision-output" class="ff-output-line"></div>
       </div>
     </div>
@@ -73,6 +114,7 @@
       <div class="ff-chamber-inner">
         <h1>Identity</h1>
         <input id="ff-identity-input" placeholder="I am becoming someone who...">
+        <button id="ff-identity-affirm" class="ff-btn">Affirm</button>
         <div id="ff-identity-output" class="ff-output-line"></div>
       </div>
     </div>
@@ -81,6 +123,9 @@
       <div class="ff-chamber-inner">
         <h1>Ritual</h1>
         <div id="ff-ritual-sub" class="ff-output-line">Sequence completion will appear here.</div>
+        <button id="ff-ritual-complete" class="ff-btn ff-btn-primary">
+          Complete cycle
+        </button>
       </div>
     </div>
 
@@ -93,13 +138,25 @@
   <div id="ff-console" class="ff-console">
     <div class="ff-console-header">
       <span>FeelForm Console</span>
-      <div class="ff-console-timing">
-        <div id="timing-pulse" class="ff-console-timing-dot"></div>
-        <div id="timing-drift" class="ff-console-timing-dot"></div>
+      <div class="ff-console-controls">
+        <div class="ff-console-sound">
+          <span>Sound</span>
+          <button id="ff-sound-toggle" class="ff-sound-toggle">OFF</button>
+        </div>
+        <div class="ff-console-timing">
+          <div id="timing-pulse" class="ff-console-timing-dot"></div>
+          <div id="timing-drift" class="ff-console-timing-dot"></div>
+        </div>
       </div>
     </div>
     <div id="ff-log" class="ff-console-log"></div>
   </div>
+
+  <!-- SAMPLE AUDIO (you can replace src with your own tiny files) -->
+  <audio id="snd-reflection" src="sounds/reflection-chime.mp3" preload="auto"></audio>
+  <audio id="snd-decision"   src="sounds/decision-click.mp3" preload="auto"></audio>
+  <audio id="snd-identity"   src="sounds/identity-shimmer.mp3" preload="auto"></audio>
+  <audio id="snd-ritual"     src="sounds/ritual-dissolve.mp3" preload="auto"></audio>
 
 </div>
 
