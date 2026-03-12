@@ -1,116 +1,106 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>FeelForm OS</title>
+  <title>FeelForm Console</title>
   <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-<div class="ff-root">
-  <div class="ff-env">
-    <button id="ff-console-toggle" class="ff-console-toggle">OS</button>
+<div id="ff-shell">
 
-    <div id="ff-console" class="ff-console">
-      <div class="ff-console-title">FeelForm Console</div>
+  <!-- NAV DOTS -->
+  <div id="ff-nav">
+    <div id="nav-baseline"   class="ff-nav-glyph is-active"></div>
+    <div id="nav-threshold"  class="ff-nav-glyph"></div>
+    <div id="nav-pulse"      class="ff-nav-glyph"></div>
+    <div id="nav-somatic"    class="ff-nav-glyph"></div>
+    <div id="nav-reflection" class="ff-nav-glyph"></div>
+    <div id="nav-decision"   class="ff-nav-glyph"></div>
+    <div id="nav-identity"   class="ff-nav-glyph"></div>
+    <div id="nav-ritual"     class="ff-nav-glyph"></div>
+  </div>
 
-      <div class="ff-console-section">Timing</div>
-      <div class="ff-console-timing-row"><span>Drift</span><span id="timing-drift" class="ff-console-timing-dot"></span></div>
-      <div class="ff-console-timing-row"><span>Pulse</span><span id="timing-pulse" class="ff-console-timing-dot"></span></div>
+  <!-- CHAMBERS WRAPPER -->
+  <div id="ff-chambers">
 
-      <div class="ff-console-section">Nav Map</div>
-      <div id="ff-nav-map" class="ff-console-nav-map"></div>
-
-      <div class="ff-console-section">Log</div>
-      <div id="ff-log" class="ff-console-log"></div>
+    <div id="ch-baseline" class="ff-chamber is-active">
+      <div class="ff-chamber-inner">
+        <h1>Baseline</h1>
+        <p>Arrive. Notice what is here without changing it.</p>
+      </div>
     </div>
 
-    <div class="ff-chambers">
-
-      <div id="ch-baseline" class="ff-chamber is-active">
-        <div class="ff-core"><div class="ff-core-inner">
-          <div class="ff-label">Baseline</div>
-          <div class="ff-subtitle">Centering</div>
-        </div></div>
+    <div id="ch-threshold" class="ff-chamber">
+      <div class="ff-chamber-inner">
+        <h1>Threshold</h1>
+        <p>Standing at the edge of a shift.</p>
       </div>
-
-      <div id="ch-threshold" class="ff-chamber">
-        <div class="ff-core"><div class="ff-core-inner">
-          <div class="ff-label">Threshold</div>
-          <div class="ff-subtitle">Crossing</div>
-        </div></div>
-      </div>
-
-      <div id="ch-pulse" class="ff-chamber">
-        <div class="ff-core"><div class="ff-core-inner">
-          <div class="ff-label">Pulse</div>
-          <div class="ff-subtitle">Activation</div>
-        </div></div>
-      </div>
-
-      <div id="ch-somatic" class="ff-chamber">
-        <div class="ff-core"><div class="ff-core-inner">
-          <div class="ff-label">Somatic</div>
-          <div class="ff-subtitle">Embodiment</div>
-        </div></div>
-      </div>
-
-      <div id="ch-reflection" class="ff-chamber">
-        <div class="ff-core"><div class="ff-core-inner">
-          <div class="ff-label">Reflection</div>
-          <textarea id="ff-reflect-input" class="ff-reflection-area" placeholder="What are you noticing?"></textarea>
-          <div id="ff-reflect-output" class="ff-output-block"></div>
-        </div></div>
-      </div>
-
-      <div id="ch-decision" class="ff-chamber">
-        <div class="ff-core"><div class="ff-core-inner">
-          <div class="ff-label">Decision</div>
-          <div class="ff-decision-grid">
-            <div>
-              <div>Path A</div>
-              <input id="ff-decision-a" class="ff-decision-input" placeholder="Option A">
-            </div>
-            <div>
-              <div>Path B</div>
-              <input id="ff-decision-b" class="ff-decision-input" placeholder="Option B">
-            </div>
-          </div>
-          <div id="ff-decision-output" class="ff-output-block"></div>
-        </div></div>
-      </div>
-
-      <div id="ch-identity" class="ff-chamber">
-        <div class="ff-core"><div class="ff-core-inner">
-          <div class="ff-label">Identity</div>
-          <textarea id="ff-identity-input" class="ff-identity-input" placeholder="Who are you becoming?"></textarea>
-          <div id="ff-identity-output" class="ff-output-block"></div>
-        </div></div>
-      </div>
-
-      <div id="ch-ritual" class="ff-chamber">
-        <div class="ff-core"><div class="ff-core-inner">
-          <div class="ff-label">Ritual</div>
-          <div id="ff-ritual-step" class="ff-ritual-step">Step 1</div>
-          <div id="ff-ritual-sub" class="ff-ritual-sub">Begin the sequence.</div>
-        </div></div>
-      </div>
-
     </div>
 
-    <div class="ff-nav">
-      <div id="nav-baseline" class="ff-nav-glyph"></div>
-      <div id="nav-threshold" class="ff-nav-glyph"></div>
-      <div id="nav-pulse" class="ff-nav-glyph"></div>
-      <div id="nav-somatic" class="ff-nav-glyph"></div>
-      <div id="nav-reflection" class="ff-nav-glyph"></div>
-      <div id="nav-decision" class="ff-nav-glyph"></div>
-      <div id="nav-identity" class="ff-nav-glyph"></div>
-      <div id="nav-ritual" class="ff-nav-glyph"></div>
+    <div id="ch-pulse" class="ff-chamber">
+      <div class="ff-chamber-inner">
+        <h1>Pulse</h1>
+        <p>What is alive in you right now?</p>
+      </div>
+    </div>
+
+    <div id="ch-somatic" class="ff-chamber">
+      <div class="ff-chamber-inner">
+        <h1>Somatic</h1>
+        <p>Where does this live in your body?</p>
+      </div>
+    </div>
+
+    <div id="ch-reflection" class="ff-chamber">
+      <div class="ff-chamber-inner">
+        <h1>Reflection</h1>
+        <textarea id="ff-reflect-input" placeholder="Write what you’re noticing..."></textarea>
+        <div id="ff-reflect-output" class="ff-output-line"></div>
+      </div>
+    </div>
+
+    <div id="ch-decision" class="ff-chamber">
+      <div class="ff-chamber-inner">
+        <h1>Decision</h1>
+        <input id="ff-decision-a" placeholder="Path A">
+        <input id="ff-decision-b" placeholder="Path B">
+        <div id="ff-decision-output" class="ff-output-line"></div>
+      </div>
+    </div>
+
+    <div id="ch-identity" class="ff-chamber">
+      <div class="ff-chamber-inner">
+        <h1>Identity</h1>
+        <input id="ff-identity-input" placeholder="I am becoming someone who...">
+        <div id="ff-identity-output" class="ff-output-line"></div>
+      </div>
+    </div>
+
+    <div id="ch-ritual" class="ff-chamber">
+      <div class="ff-chamber-inner">
+        <h1>Ritual</h1>
+        <div id="ff-ritual-sub" class="ff-output-line">Sequence completion will appear here.</div>
+      </div>
     </div>
 
   </div>
+
+  <!-- CONSOLE TOGGLE -->
+  <div id="ff-console-toggle">CONSOLE</div>
+
+  <!-- CONSOLE PANEL -->
+  <div id="ff-console" class="ff-console">
+    <div class="ff-console-header">
+      <span>FeelForm Console</span>
+      <div class="ff-console-timing">
+        <div id="timing-pulse" class="ff-console-timing-dot"></div>
+        <div id="timing-drift" class="ff-console-timing-dot"></div>
+      </div>
+    </div>
+    <div id="ff-log" class="ff-console-log"></div>
+  </div>
+
 </div>
 
 <script src="ff-console.js"></script>
