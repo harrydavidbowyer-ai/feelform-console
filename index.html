@@ -3,13 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <title>FeelForm OS v4.1</title>
-  <link rel="stylesheet" href="style.css">
+
+  <!-- CORRECT: your stylesheet is named style.css -->
+  <link rel="stylesheet" href="https://harrydavidbowyer-ai.github.io/feelform-console/style.css">
 </head>
+
 <body>
 
 <div id="ff-root">
 
-  <!-- HEADER / CONSOLE STRIP -->
+  <!-- HEADER -->
   <header id="ff-header">
     <div id="ff-logo">FEELFORM OS v4.1</div>
     <div id="ff-header-center">CONSOLE</div>
@@ -81,14 +84,12 @@
   <!-- CHAMBERS -->
   <main id="ff-chambers">
 
-    <!-- BASELINE -->
     <section class="ff-chamber ff-active" id="ff-chamber-baseline">
       <h1>Baseline</h1>
       <p>Where am I, right now, in my body and life?</p>
       <button class="ff-next" data-next="pulse">ENTER PULSE</button>
     </section>
 
-    <!-- PULSE -->
     <section class="ff-chamber" id="ff-chamber-pulse">
       <h1>Pulse</h1>
       <p>What is the live headline of this moment?</p>
@@ -96,7 +97,6 @@
       <button class="ff-next" data-next="somatic">ENTER SOMATIC</button>
     </section>
 
-    <!-- SOMATIC -->
     <section class="ff-chamber" id="ff-chamber-somatic">
       <h1>Somatic</h1>
       <p>Where is this living in your body?</p>
@@ -108,7 +108,6 @@
       <button class="ff-next" data-next="reflect">ENTER REFLECTION</button>
     </section>
 
-    <!-- REFLECTION -->
     <section class="ff-chamber" id="ff-chamber-reflect">
       <h1>Reflection</h1>
       <p>What is this really about?</p>
@@ -116,7 +115,6 @@
       <button class="ff-next" data-next="decision">ENTER DECISION</button>
     </section>
 
-    <!-- DECISION -->
     <section class="ff-chamber" id="ff-chamber-decision">
       <h1>Decision</h1>
       <p>What shifts now?</p>
@@ -125,7 +123,6 @@
       <button class="ff-next" data-next="identity">ENTER IDENTITY</button>
     </section>
 
-    <!-- IDENTITY -->
     <section class="ff-chamber" id="ff-chamber-identity">
       <h1>Identity</h1>
       <p>Who am I becoming, if I honor this?</p>
@@ -133,7 +130,6 @@
       <button class="ff-next" data-next="ritual">ENTER RITUAL</button>
     </section>
 
-    <!-- RITUAL -->
     <section class="ff-chamber" id="ff-chamber-ritual">
       <h1>Ritual</h1>
       <p>Let this cycle complete.</p>
@@ -146,6 +142,8 @@
 
 </div>
 
-<script src="ff-console.js"></script>
+<!-- CORRECT: absolute JS path -->
+<script src="https://harrydavidbowyer-ai.github.io/feelform-console/ff-console.js"></script>
+
 </body>
 </html>
