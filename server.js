@@ -4,7 +4,7 @@ import bodyParser from "body-parser";
 import { writeSession, readMemory } from "./memory-engine.js";
 
 const app = express();
-const PORT = 4000;
+const PORT = process.env.PORT || 4000;
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -41,7 +41,7 @@ app.post("/api/session", (req, res) => {
   }
 });
 
-// read memory (for MEMORY tab)
+// read memory
 app.get("/api/memory", (req, res) => {
   try {
     const data = readMemory();
@@ -53,5 +53,5 @@ app.get("/api/memory", (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Memory Engine API running on http://localhost:${PORT}`);
+  console.log(`Memory Engine API running on port ${PORT}`);
 });
