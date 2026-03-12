@@ -1,3 +1,8 @@
+import { initFeelFormMemory } from "./ff-memory.js";
+
+document.addEventListener("DOMContentLoaded", () => {
+  initFeelFormMemory();
+});
 // AUDIO ENGINE
 
 let ffAudioCtx = null;
