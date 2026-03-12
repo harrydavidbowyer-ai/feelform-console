@@ -1,367 +1,259 @@
-// ---------------------------------------------------------
-// FEELFORM OS v4.1 — Console + Chambers + Memory + Synth Audio
-// ---------------------------------------------------------
+// AUDIO ENGINE
 
-function FFLog(msg){ console.log("[FeelForm]", msg); }
+let ffAudioCtx = null;
+let ffSomaticNode = null;
+let ffRitualNode = null;
+let ffMasterGain = null;
+let ffAudioEnabled = false;
 
-// ---------------------------------------------------------
-// STATE
-// ---------------------------------------------------------
+function ffInitAudio() {
+  if (ffAudioCtx) return;
+  ffAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-var FFState = {
-  chamber: "baseline"
-};
-
-// ---------------------------------------------------------
-// CINEMATIC SYNTH SOUND ENGINE
-// ---------------------------------------------------------
-
-var FFSound = {
-  on: false,
-  ctx: null,
-
-  init: function(){
-    if(!this.ctx){
-      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-  },
-
-  toggle: function(){
-    this.on = !this.on;
-    var btn = document.getElementById("ff-sound-toggle");
-    if(btn) btn.textContent = this.on ? "ON" : "OFF";
-    if(this.on) this.init();
-  },
-
-  playEvent: function(name){
-    if(!this.on) return;
-    if(!this.ctx) this.init();
-
-    switch(name){
-      case "step": this.click(); break;
-      case "pulse": this.ping(); this.heartbeat(); break;
-      case "somatic": this.lowTone(); break;
-      case "identity": this.shimmer(); break;
-      case "chamber-shift": this.whoosh(); break;
-      case "ritual-complete": this.swell(); break;
-    }
-  },
-
-  click: function(){
-    let o = this.ctx.createOscillator();
-    let g = this.ctx.createGain();
-    o.type = "square";
-    o.frequency.value = 240;
-    g.gain.setValueAtTime(0.25, this.ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.05);
-    o.connect(g).connect(this.ctx.destination);
-    o.start();
-    o.stop(this.ctx.currentTime + 0.06);
-  },
-
-  ping: function(){
-    let o = this.ctx.createOscillator();
-    let g = this.ctx.createGain();
-    o.type = "sine";
-    o.frequency.setValueAtTime(660, this.ctx.currentTime);
-    g.gain.setValueAtTime(0.3, this.ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.4);
-    o.connect(g).connect(this.ctx.destination);
-    o.start();
-    o.stop(this.ctx.currentTime + 0.5);
-  },
-
-  lowTone: function(){
-    let o = this.ctx.createOscillator();
-    let g = this.ctx.createGain();
-    o.type = "sine";
-    o.frequency.setValueAtTime(140, this.ctx.currentTime);
-    g.gain.setValueAtTime(0.35, this.ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.3);
-    o.connect(g).connect(this.ctx.destination);
-    o.start();
-    o.stop(this.ctx.currentTime + 0.35);
-  },
-
-  // GLASSIER, SOFTER IDENTITY SHIMMER
-  shimmer: function(){
-    let o = this.ctx.createOscillator();
-    let g = this.ctx.createGain();
-
-    o.type = "sine";
-    o.frequency.setValueAtTime(1040, this.ctx.currentTime);
-
-    let filter = this.ctx.createBiquadFilter();
-    filter.type = "highpass";
-    filter.frequency.setValueAtTime(900, this.ctx.currentTime);
-
-    g.gain.setValueAtTime(0.18, this.ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 1.1);
-
-    o.connect(filter).connect(g).connect(this.ctx.destination);
-    o.start();
-    o.stop(this.ctx.currentTime + 1.2);
-  },
-
-  // DARKER, DEEPER CHAMBER WHOOSH
-  whoosh: function(){
-    let bufferSize = 2 * this.ctx.sampleRate;
-    let noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-    let output = noiseBuffer.getChannelData(0);
-
-    for (let i = 0; i < bufferSize; i++) {
-      output[i] = (Math.random() * 2 - 1) * 0.25;
-    }
-
-    let noise = this.ctx.createBufferSource();
-    noise.buffer = noiseBuffer;
-
-    let filter = this.ctx.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.frequency.setValueAtTime(420, this.ctx.currentTime);
-
-    let g = this.ctx.createGain();
-    g.gain.setValueAtTime(0.35, this.ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.45);
-
-    noise.connect(filter).connect(g).connect(this.ctx.destination);
-    noise.start();
-    noise.stop(this.ctx.currentTime + 0.5);
-  },
-
-  // HEARTBEAT UNDER PULSE
-  heartbeat: function(){
-    let t = this.ctx.currentTime;
-
-    let o = this.ctx.createOscillator();
-    let g = this.ctx.createGain();
-
-    o.type = "sine";
-    o.frequency.setValueAtTime(60, t);
-
-    g.gain.setValueAtTime(0.001, t);
-    g.gain.exponentialRampToValueAtTime(0.4, t + 0.05);
-    g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
-
-    o.connect(g).connect(this.ctx.destination);
-    o.start();
-    o.stop(t + 0.3);
-  },
-
-  swell: function(){
-    let o = this.ctx.createOscillator();
-    let g = this.ctx.createGain();
-    o.type = "sine";
-    o.frequency.setValueAtTime(440, this.ctx.currentTime);
-    g.gain.setValueAtTime(0.001, this.ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.35, this.ctx.currentTime + 0.4);
-    g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 1.2);
-    o.connect(g).connect(this.ctx.destination);
-    o.start();
-    o.stop(this.ctx.currentTime + 1.3);
-  }
-};
-
-// ---------------------------------------------------------
-// FORCE AUDIO RESUME BUTTON
-// ---------------------------------------------------------
-
-function FF_checkAudioState(){
-  if(FFSound.ctx && FFSound.ctx.state === "suspended"){
-    let btn = document.getElementById("ff-force-audio");
-    if(btn) btn.style.display = "inline-block";
-  }
+  ffMasterGain = ffAudioCtx.createGain();
+  ffMasterGain.gain.value = 0.7;
+  ffMasterGain.connect(ffAudioCtx.destination);
 }
 
-function FF_forceResumeAudio(){
-  if(FFSound.ctx){
-    FFSound.ctx.resume().then(()=>{
-      let btn = document.getElementById("ff-force-audio");
-      if(btn) btn.style.display = "none";
-      console.log("Audio resumed manually.");
+function ffStartSomaticBreath() {
+  if (!ffAudioCtx) return;
+  ffStopSomaticBreath();
+
+  const osc = ffAudioCtx.createOscillator();
+  const gain = ffAudioCtx.createGain();
+
+  osc.type = "sine";
+  osc.frequency.value = 70; // low, body-level tone
+
+  gain.gain.value = 0;
+  osc.connect(gain);
+  gain.connect(ffMasterGain);
+
+  const now = ffAudioCtx.currentTime;
+  gain.gain.linearRampToValueAtTime(0.18, now + 0.8);
+  gain.gain.linearRampToValueAtTime(0.05, now + 4.0);
+  gain.gain.linearRampToValueAtTime(0.18, now + 7.2);
+
+  osc.start();
+  ffSomaticNode = { osc, gain };
+}
+
+function ffStopSomaticBreath() {
+  if (!ffSomaticNode) return;
+  const { osc, gain } = ffSomaticNode;
+  const now = ffAudioCtx.currentTime;
+  gain.gain.cancelScheduledValues(now);
+  gain.gain.linearRampToValueAtTime(0, now + 0.6);
+  osc.stop(now + 0.7);
+  ffSomaticNode = null;
+}
+
+function ffStartRitualDrone() {
+  if (!ffAudioCtx) return;
+  ffStopRitualDrone();
+
+  const osc = ffAudioCtx.createOscillator();
+  const gain = ffAudioCtx.createGain();
+
+  osc.type = "sawtooth";
+  osc.frequency.value = 48; // deep, grounding
+
+  gain.gain.value = 0;
+  osc.connect(gain);
+  gain.connect(ffMasterGain);
+
+  const now = ffAudioCtx.currentTime;
+  gain.gain.linearRampToValueAtTime(0.22, now + 2.0);
+  gain.gain.linearRampToValueAtTime(0.28, now + 8.0);
+
+  osc.start();
+  ffRitualNode = { osc, gain };
+}
+
+function ffStopRitualDrone() {
+  if (!ffRitualNode) return;
+  const { osc, gain } = ffRitualNode;
+  const now = ffAudioCtx.currentTime;
+  gain.gain.cancelScheduledValues(now);
+  gain.gain.linearRampToValueAtTime(0, now + 1.2);
+  osc.stop(now + 1.3);
+  ffRitualNode = null;
+}
+
+function ffStopAllAudio() {
+  ffStopSomaticBreath();
+  ffStopRitualDrone();
+}
+
+// SOUND TOGGLE
+
+function ffSetupSoundControls() {
+  const toggle = document.getElementById("ff-sound-toggle");
+  const forceBtn = document.getElementById("ff-force-audio");
+
+  if (!toggle) return;
+
+  toggle.addEventListener("click", () => {
+    if (!ffAudioCtx) ffInitAudio();
+
+    ffAudioEnabled = !ffAudioEnabled;
+    toggle.textContent = ffAudioEnabled ? "ON" : "OFF";
+
+    if (!ffAudioEnabled) {
+      ffStopAllAudio();
+    }
+  });
+
+  if (forceBtn) {
+    forceBtn.addEventListener("click", () => {
+      if (!ffAudioCtx) ffInitAudio();
+      ffAudioEnabled = true;
+      toggle.textContent = "ON";
+      forceBtn.style.display = "none";
     });
   }
+
+  // First user interaction unlock
+  window.addEventListener(
+    "click",
+    () => {
+      if (!ffAudioCtx) ffInitAudio();
+    },
+    { once: true }
+  );
 }
 
-// ---------------------------------------------------------
-// MEMORY ENGINE
-// ---------------------------------------------------------
+// CONSOLE TABS
 
-var FFMemory = {
-  localKey: "ff-memory-local",
+function ffSetupConsoleTabs() {
+  const tabs = Array.from(document.querySelectorAll(".ff-console-tab"));
+  const panels = {
+    system: document.getElementById("ff-panel-system"),
+    coaching: document.getElementById("ff-panel-coaching"),
+    identity: document.getElementById("ff-panel-identity"),
+    memory: document.getElementById("ff-panel-memory"),
+  };
 
-  loadLocal: function(){
-    try { return JSON.parse(localStorage.getItem(this.localKey)); }
-    catch(e){ return null; }
-  },
+  tabs.forEach((tab) => {
+    tab.addEventListener("click", () => {
+      const target = tab.dataset.tab;
+      tabs.forEach((t) => t.classList.remove("ff-active"));
+      tab.classList.add("ff-active");
 
-  saveLocal: function(snapshot){
-    try { localStorage.setItem(this.localKey, JSON.stringify(snapshot)); }
-    catch(e){}
-  },
+      Object.values(panels).forEach((p) => p && p.classList.remove("ff-active"));
+      if (panels[target]) panels[target].classList.add("ff-active");
+    });
+  });
+}
 
-  captureFromDOM: function(){
-    var pulse = document.getElementById("ff-pulse-input")?.value || "";
-    var somLoc = document.getElementById("ff-somatic-location")?.value || "";
-    var somInt = parseInt(document.getElementById("ff-somatic-intensity")?.value || "0",10);
-    var reflection = document.getElementById("ff-reflect-input")?.value || "";
-    var identity = document.getElementById("ff-identity-input")?.value || "";
+// CHAMBER COLORS
 
-    var decA = document.getElementById("ff-decision-a")?.value || "";
-    var decB = document.getElementById("ff-decision-b")?.value || "";
-    var decision = (decA || decB) ? (decA + " / " + decB) : "";
-
-    var amplitude = Math.max(0, Math.min(100, somInt || 0));
-
-    this.currentSession = {
-      index: Date.now(),
-      timestamp: new Date().toISOString(),
-      pulse: pulse,
-      somatic: { location: somLoc, intensity: somInt },
-      reflection: reflection,
-      decision: decision,
-      identity: identity,
-      amplitude: amplitude
-    };
-
-    return this.currentSession;
-  },
-
-  persistCycle: async function(){
-    var snapshot = this.captureFromDOM();
-    this.saveLocal(snapshot);
-    FFLog("Memory: local snapshot saved.");
-  }
+const ffChamberColors = {
+  "ff-chamber-baseline": getComputedStyle(document.documentElement).getPropertyValue(
+    "--ff-baseline"
+  ).trim(),
+  "ff-chamber-pulse": getComputedStyle(document.documentElement).getPropertyValue(
+    "--ff-pulse"
+  ).trim(),
+  "ff-chamber-somatic": getComputedStyle(document.documentElement).getPropertyValue(
+    "--ff-somatic"
+  ).trim(),
+  "ff-chamber-reflect": getComputedStyle(document.documentElement).getPropertyValue(
+    "--ff-reflect"
+  ).trim(),
+  "ff-chamber-decision": getComputedStyle(document.documentElement).getPropertyValue(
+    "--ff-decision"
+  ).trim(),
+  "ff-chamber-identity": getComputedStyle(document.documentElement).getPropertyValue(
+    "--ff-identity"
+  ).trim(),
+  "ff-chamber-ritual": getComputedStyle(document.documentElement).getPropertyValue(
+    "--ff-ritual"
+  ).trim(),
 };
 
-// ---------------------------------------------------------
-// MEMORY TAB RENDERING
-// ---------------------------------------------------------
-
-function FFMemory_renderSessions(local, el){
-  if(!el) return;
-  el.innerHTML = "";
-  if(!local){
-    el.textContent = "No local session snapshot yet.";
-    return;
-  }
-
-  el.innerHTML = `
-    <div class="ff-memory-meta-row">
-      <span>Last session</span>
-      <span>${local.timestamp}</span>
-    </div>
-
-    <div class="ff-memory-bar-row">
-      <div class="ff-memory-bar-label">Amplitude</div>
-      <div class="ff-memory-bar">
-        <div class="ff-memory-bar-fill" style="width:${local.amplitude}%"></div>
-      </div>
-    </div>
-
-    <div><span class="ff-memory-pill">Pulse</span> ${local.pulse || "—"}</div>
-    <div><span class="ff-memory-pill">Somatic</span> ${local.somatic.location || "—"} · ${local.somatic.intensity || 0}</div>
-    <div><span class="ff-memory-pill">Reflection</span> ${local.reflection || "—"}</div>
-    <div><span class="ff-memory-pill">Decision</span> ${local.decision || "—"}</div>
-    <div><span class="ff-memory-pill">Identity</span> ${local.identity || "—"}</div>
-  `;
+function ffSetBackgroundForChamber(chamberId) {
+  const color = ffChamberColors[chamberId];
+  if (!color) return;
+  document.documentElement.style.setProperty("--ff-bg", color);
 }
 
-function FFMemory_load(){
-  var local = FFMemory.loadLocal();
-  FFMemory_renderSessions(local, document.getElementById("ff-memory-sessions"));
+// CHAMBER NAVIGATION
+
+function ffSetupChambers() {
+  const chambers = Array.from(document.querySelectorAll(".ff-chamber"));
+  const nextButtons = Array.from(document.querySelectorAll(".ff-next"));
+  const ritualGlow = document.getElementById("ff-ritual-glow");
+  const ritualButton = document.getElementById("ff-ritual-complete");
+
+  function activateChamber(id) {
+    chambers.forEach((c) => c.classList.remove("ff-active"));
+    const target = document.getElementById(id);
+    if (!target) return;
+    target.classList.add("ff-active");
+
+    ffSetBackgroundForChamber(id);
+
+    // Audio routing
+    if (!ffAudioEnabled || !ffAudioCtx) {
+      ffStopAllAudio();
+      return;
+    }
+
+    ffStopAllAudio();
+
+    if (id === "ff-chamber-somatic") {
+      ffStartSomaticBreath();
+    } else if (id === "ff-chamber-ritual") {
+      ffStartRitualDrone();
+      if (ritualGlow) ritualGlow.classList.add("ff-active");
+    } else {
+      if (ritualGlow) ritualGlow.classList.remove("ff-active");
+    }
+  }
+
+  nextButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const nextId = "ff-chamber-" + btn.dataset.next;
+      activateChamber(nextId);
+    });
+  });
+
+  if (ritualButton) {
+    ritualButton.addEventListener("click", () => {
+      // Complete cycle → back to Baseline
+      activateChamber("ff-chamber-baseline");
+    });
+  }
+
+  // Initial
+  const initial = document.getElementById("ff-chamber-baseline");
+  if (initial) {
+    initial.classList.add("ff-active");
+    ffSetBackgroundForChamber("ff-chamber-baseline");
+  }
 }
 
-// ---------------------------------------------------------
-// CHAMBER SWITCHING
-// ---------------------------------------------------------
+// MEMORY STUBS (non-breaking placeholders)
 
-function switchChamber(id){
-  FFState.chamber = id;
-  document.querySelectorAll(".ff-chamber").forEach(c=>{
-    c.classList.remove("ff-active");
-  });
-  var target = document.getElementById("ff-chamber-" + id);
-  if(target) target.classList.add("ff-active");
+function ffInitMemory() {
+  // You can wire this to your Memory Engine later.
+  const sessions = document.getElementById("ff-memory-sessions");
+  const identity = document.getElementById("ff-memory-identity");
+  const trajectory = document.getElementById("ff-memory-trajectory");
+  const meta = document.getElementById("ff-memory-meta");
+
+  if (sessions) sessions.textContent = "Sessions will appear here.";
+  if (identity) identity.textContent = "Identity drift will appear here.";
+  if (trajectory) trajectory.textContent = "Trajectory will appear here.";
+  if (meta) meta.textContent = "Meta insights will appear here.";
 }
 
-// ---------------------------------------------------------
-// INIT
-// ---------------------------------------------------------
+// BOOT
 
-window.onload = function(){
-
-  var soundBtn = document.getElementById("ff-sound-toggle");
-  if(soundBtn){
-    soundBtn.onclick = function(){
-      FFSound.toggle();
-    };
-  }
-
-  var forceBtn = document.getElementById("ff-force-audio");
-  if(forceBtn){
-    forceBtn.onclick = FF_forceResumeAudio;
-  }
-
-  document.addEventListener("click", FF_checkAudioState);
-
-  document.querySelectorAll(".ff-console-tab").forEach(tab=>{
-    tab.onclick = function(){
-      var name = this.dataset.tab;
-
-      document.querySelectorAll(".ff-console-panel").forEach(p=>p.classList.remove("ff-active"));
-      document.querySelectorAll(".ff-console-tab").forEach(t=>t.classList.remove("ff-active"));
-
-      this.classList.add("ff-active");
-      var panel = document.getElementById("ff-panel-" + name);
-      if(panel) panel.classList.add("ff-active");
-
-      if(name === "memory"){
-        FFMemory_load();
-      }
-    };
-  });
-
-  document.querySelectorAll(".ff-next").forEach(btn=>{
-    btn.onclick = function(){
-      var next = this.dataset.next;
-      if(next){
-        switchChamber(next);
-        FFSound.playEvent("chamber-shift");
-      }
-    };
-  });
-
-  var ritualBtn = document.getElementById("ff-ritual-complete");
-  var ritualGlow = document.getElementById("ff-ritual-glow");
-  if(ritualBtn){
-    ritualBtn.onclick = function(){
-      var sub = document.getElementById("ff-ritual-sub");
-      if(sub){
-        sub.textContent = "Cycle captured. Returning to Baseline.";
-      }
-      if(ritualGlow){
-        ritualGlow.classList.add("ff-on");
-      }
-
-      FFSound.playEvent("ritual-complete");
-      FFLog("Cycle completed. Capturing memory…");
-
-      FFMemory.persistCycle();
-
-      setTimeout(function(){
-        if(ritualGlow){
-          ritualGlow.classList.remove("ff-on");
-        }
-        switchChamber("baseline");
-      }, 1200);
-    };
-  }
-
-  switchChamber("baseline");
-
-  var last = FFMemory.loadLocal();
-  if(last){
-    FFLog("Memory: local snapshot from " + last.timestamp);
-  }
-};
+document.addEventListener("DOMContentLoaded", () => {
+  ffSetupSoundControls();
+  ffSetupConsoleTabs();
+  ffSetupChambers();
+  ffInitMemory();
+});
