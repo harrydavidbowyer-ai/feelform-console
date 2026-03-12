@@ -1,9 +1,66 @@
-import { initFeelFormMemory } from "./ff-memory.js";
+/* ============================================================
+   FEELFORM OS v4.1 — FULL CONSOLE + MEMORY ENGINE JS
+   (No imports, no modules, no errors)
+   ============================================================ */
 
-document.addEventListener("DOMContentLoaded", () => {
-  initFeelFormMemory();
-});
-// AUDIO ENGINE
+/* ------------------------------------------------------------
+   MEMORY ENGINE (INLINE VERSION)
+   ------------------------------------------------------------ */
+
+const FF_API_BASE = "https://feelform-console.onrender.com";
+
+async function ffSendCycleToMemory() {
+  const pulse = document.getElementById("ff-pulse-input")?.value || "";
+  const somatic = document.getElementById("ff-somatic-location")?.value || "";
+  const reflection = document.getElementById("ff-reflect-input")?.value || "";
+  const decisionA = document.getElementById("ff-decision-a")?.value || "";
+  const decisionB = document.getElementById("ff-decision-b")?.value || "";
+  const identity = document.getElementById("ff-identity-input")?.value || "";
+  const intensity = parseFloat(document.getElementById("ff-somatic-intensity")?.value || "0");
+
+  const payload = {
+    pulse,
+    somatic,
+    reflection,
+    decision: `${decisionA} | ${decisionB}`.trim(),
+    identity,
+    amplitude: intensity / 100
+  };
+
+  const res = await fetch(FF_API_BASE + "/api/session", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+
+  return res.json();
+}
+
+async function ffLoadMemoryFromServer() {
+  const res = await fetch(FF_API_BASE + "/api/memory");
+  return res.json();
+}
+
+async function ffRefreshMemoryPanel() {
+  const data = await ffLoadMemoryFromServer();
+  if (!data) return;
+
+  document.getElementById("ff-memory-sessions").textContent =
+    data.meta?.total_cycles ? `Total cycles: ${data.meta.total_cycles}` : "No sessions yet.";
+
+  document.getElementById("ff-memory-identity").textContent =
+    JSON.stringify(data.identity, null, 2);
+
+  document.getElementById("ff-memory-trajectory").textContent =
+    JSON.stringify(data.trajectory, null, 2);
+
+  document.getElementById("ff-memory-meta").textContent =
+    JSON.stringify(data.meta, null, 2);
+}
+
+/* ------------------------------------------------------------
+   AUDIO ENGINE
+   ------------------------------------------------------------ */
 
 let ffAudioCtx = null;
 let ffSomaticNode = null;
@@ -28,7 +85,7 @@ function ffStartSomaticBreath() {
   const gain = ffAudioCtx.createGain();
 
   osc.type = "sine";
-  osc.frequency.value = 70; // low, body-level tone
+  osc.frequency.value = 70;
 
   gain.gain.value = 0;
   osc.connect(gain);
@@ -61,7 +118,7 @@ function ffStartRitualDrone() {
   const gain = ffAudioCtx.createGain();
 
   osc.type = "sawtooth";
-  osc.frequency.value = 48; // deep, grounding
+  osc.frequency.value = 48;
 
   gain.gain.value = 0;
   osc.connect(gain);
@@ -90,7 +147,9 @@ function ffStopAllAudio() {
   ffStopRitualDrone();
 }
 
-// SOUND TOGGLE
+/* ------------------------------------------------------------
+   SOUND TOGGLE
+   ------------------------------------------------------------ */
 
 function ffSetupSoundControls() {
   const toggle = document.getElementById("ff-sound-toggle");
@@ -118,7 +177,6 @@ function ffSetupSoundControls() {
     });
   }
 
-  // First user interaction unlock
   window.addEventListener(
     "click",
     () => {
@@ -128,7 +186,9 @@ function ffSetupSoundControls() {
   );
 }
 
-// CONSOLE TABS
+/* ------------------------------------------------------------
+   CONSOLE TABS
+   ------------------------------------------------------------ */
 
 function ffSetupConsoleTabs() {
   const tabs = Array.from(document.querySelectorAll(".ff-console-tab"));
@@ -147,34 +207,24 @@ function ffSetupConsoleTabs() {
 
       Object.values(panels).forEach((p) => p && p.classList.remove("ff-active"));
       if (panels[target]) panels[target].classList.add("ff-active");
+
+      if (target === "memory") ffRefreshMemoryPanel();
     });
   });
 }
 
-// CHAMBER COLORS
+/* ------------------------------------------------------------
+   CHAMBER COLORS
+   ------------------------------------------------------------ */
 
 const ffChamberColors = {
-  "ff-chamber-baseline": getComputedStyle(document.documentElement).getPropertyValue(
-    "--ff-baseline"
-  ).trim(),
-  "ff-chamber-pulse": getComputedStyle(document.documentElement).getPropertyValue(
-    "--ff-pulse"
-  ).trim(),
-  "ff-chamber-somatic": getComputedStyle(document.documentElement).getPropertyValue(
-    "--ff-somatic"
-  ).trim(),
-  "ff-chamber-reflect": getComputedStyle(document.documentElement).getPropertyValue(
-    "--ff-reflect"
-  ).trim(),
-  "ff-chamber-decision": getComputedStyle(document.documentElement).getPropertyValue(
-    "--ff-decision"
-  ).trim(),
-  "ff-chamber-identity": getComputedStyle(document.documentElement).getPropertyValue(
-    "--ff-identity"
-  ).trim(),
-  "ff-chamber-ritual": getComputedStyle(document.documentElement).getPropertyValue(
-    "--ff-ritual"
-  ).trim(),
+  "ff-chamber-baseline": getComputedStyle(document.documentElement).getPropertyValue("--ff-baseline").trim(),
+  "ff-chamber-pulse": getComputedStyle(document.documentElement).getPropertyValue("--ff-pulse").trim(),
+  "ff-chamber-somatic": getComputedStyle(document.documentElement).getPropertyValue("--ff-somatic").trim(),
+  "ff-chamber-reflect": getComputedStyle(document.documentElement).getPropertyValue("--ff-reflect").trim(),
+  "ff-chamber-decision": getComputedStyle(document.documentElement).getPropertyValue("--ff-decision").trim(),
+  "ff-chamber-identity": getComputedStyle(document.documentElement).getPropertyValue("--ff-identity").trim(),
+  "ff-chamber-ritual": getComputedStyle(document.documentElement).getPropertyValue("--ff-ritual").trim(),
 };
 
 function ffSetBackgroundForChamber(chamberId) {
@@ -183,7 +233,9 @@ function ffSetBackgroundForChamber(chamberId) {
   document.documentElement.style.setProperty("--ff-bg", color);
 }
 
-// CHAMBER NAVIGATION
+/* ------------------------------------------------------------
+   CHAMBER NAVIGATION
+   ------------------------------------------------------------ */
 
 function ffSetupChambers() {
   const chambers = Array.from(document.querySelectorAll(".ff-chamber"));
@@ -199,7 +251,6 @@ function ffSetupChambers() {
 
     ffSetBackgroundForChamber(id);
 
-    // Audio routing
     if (!ffAudioEnabled || !ffAudioCtx) {
       ffStopAllAudio();
       return;
@@ -225,13 +276,13 @@ function ffSetupChambers() {
   });
 
   if (ritualButton) {
-    ritualButton.addEventListener("click", () => {
-      // Complete cycle → back to Baseline
+    ritualButton.addEventListener("click", async () => {
+      await ffSendCycleToMemory();
+      await ffRefreshMemoryPanel();
       activateChamber("ff-chamber-baseline");
     });
   }
 
-  // Initial
   const initial = document.getElementById("ff-chamber-baseline");
   if (initial) {
     initial.classList.add("ff-active");
@@ -239,26 +290,13 @@ function ffSetupChambers() {
   }
 }
 
-// MEMORY STUBS (non-breaking placeholders)
-
-function ffInitMemory() {
-  // You can wire this to your Memory Engine later.
-  const sessions = document.getElementById("ff-memory-sessions");
-  const identity = document.getElementById("ff-memory-identity");
-  const trajectory = document.getElementById("ff-memory-trajectory");
-  const meta = document.getElementById("ff-memory-meta");
-
-  if (sessions) sessions.textContent = "Sessions will appear here.";
-  if (identity) identity.textContent = "Identity drift will appear here.";
-  if (trajectory) trajectory.textContent = "Trajectory will appear here.";
-  if (meta) meta.textContent = "Meta insights will appear here.";
-}
-
-// BOOT
+/* ------------------------------------------------------------
+   BOOT
+   ------------------------------------------------------------ */
 
 document.addEventListener("DOMContentLoaded", () => {
   ffSetupSoundControls();
   ffSetupConsoleTabs();
   ffSetupChambers();
-  ffInitMemory();
+  ffRefreshMemoryPanel();
 });
