@@ -1,17 +1,16 @@
 import express from "express";
 import cors from "cors";
-import bodyParser from "body-parser";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
 
 // -----------------------------
-// CORS — THIS FIXES YOUR ERROR
+// CORS — REQUIRED FOR GITHUB PAGES
 // -----------------------------
 app.use(
   cors({
     origin: [
-      "https://harrydavidbowyer-ai.github.io", // your GitHub Pages frontend
+      "https://harrydavidbowyer-ai.github.io", // your frontend
       "http://localhost:3000",                 // local dev
       "http://localhost:4000"
     ],
@@ -23,10 +22,10 @@ app.use(
 // -----------------------------
 // Middleware
 // -----------------------------
-app.use(bodyParser.json());
+app.use(express.json());
 
 // -----------------------------
-// In-memory store (Render resets on redeploy)
+// In-memory memory engine
 // -----------------------------
 let memory = {
   sessions: [],
@@ -40,7 +39,7 @@ let memory = {
 
 // -----------------------------
 // POST /api/session
-// Store a new cycle
+// Store a new emotional cycle
 // -----------------------------
 app.post("/api/session", (req, res) => {
   const cycle = req.body;
