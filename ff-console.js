@@ -1,36 +1,152 @@
-// SIMPLE LOG
+// ---------------------------------------------------------
+// FEELFORM OS v4.1 — Console + Chambers + Memory + Synth Audio
+// ---------------------------------------------------------
+
 function FFLog(msg){ console.log("[FeelForm]", msg); }
 
+// ---------------------------------------------------------
 // STATE
+// ---------------------------------------------------------
+
 var FFState = {
   chamber: "baseline"
 };
 
-// SOUND STUB
+// ---------------------------------------------------------
+// CINEMATIC SYNTH SOUND ENGINE
+// ---------------------------------------------------------
+
 var FFSound = {
   on: false,
+  ctx: null,
+
+  init: function(){
+    if(!this.ctx){
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+  },
+
   toggle: function(){
     this.on = !this.on;
     var btn = document.getElementById("ff-sound-toggle");
     if(btn) btn.textContent = this.on ? "ON" : "OFF";
+    if(this.on) this.init();
   },
+
   playEvent: function(name){
     if(!this.on) return;
-    // hook real audio here if desired
-    FFLog("Sound event: " + name);
+    if(!this.ctx) this.init();
+
+    switch(name){
+      case "step": this.click(); break;
+      case "pulse": this.ping(); break;
+      case "somatic": this.lowTone(); break;
+      case "identity": this.shimmer(); break;
+      case "chamber-shift": this.whoosh(); break;
+      case "ritual-complete": this.swell(); break;
+    }
+  },
+
+  // -------------------------------------------------------
+  // SOUND TYPES
+  // -------------------------------------------------------
+
+  click: function(){
+    let o = this.ctx.createOscillator();
+    let g = this.ctx.createGain();
+    o.type = "square";
+    o.frequency.value = 240;
+    g.gain.setValueAtTime(0.15, this.ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.05);
+    o.connect(g).connect(this.ctx.destination);
+    o.start();
+    o.stop(this.ctx.currentTime + 0.06);
+  },
+
+  ping: function(){
+    let o = this.ctx.createOscillator();
+    let g = this.ctx.createGain();
+    o.type = "sine";
+    o.frequency.setValueAtTime(660, this.ctx.currentTime);
+    g.gain.setValueAtTime(0.2, this.ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.4);
+    o.connect(g).connect(this.ctx.destination);
+    o.start();
+    o.stop(this.ctx.currentTime + 0.5);
+  },
+
+  lowTone: function(){
+    let o = this.ctx.createOscillator();
+    let g = this.ctx.createGain();
+    o.type = "sine";
+    o.frequency.setValueAtTime(140, this.ctx.currentTime);
+    g.gain.setValueAtTime(0.25, this.ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.3);
+    o.connect(g).connect(this.ctx.destination);
+    o.start();
+    o.stop(this.ctx.currentTime + 0.35);
+  },
+
+  shimmer: function(){
+    let o = this.ctx.createOscillator();
+    let g = this.ctx.createGain();
+    o.type = "triangle";
+    o.frequency.setValueAtTime(880, this.ctx.currentTime);
+    g.gain.setValueAtTime(0.15, this.ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.6);
+    o.connect(g).connect(this.ctx.destination);
+    o.start();
+    o.stop(this.ctx.currentTime + 0.7);
+  },
+
+  whoosh: function(){
+    let bufferSize = 2 * this.ctx.sampleRate;
+    let noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+    let output = noiseBuffer.getChannelData(0);
+
+    for (let i = 0; i < bufferSize; i++) {
+      output[i] = (Math.random() * 2 - 1) * 0.3;
+    }
+
+    let noise = this.ctx.createBufferSource();
+    noise.buffer = noiseBuffer;
+
+    let g = this.ctx.createGain();
+    g.gain.setValueAtTime(0.2, this.ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.25);
+
+    noise.connect(g).connect(this.ctx.destination);
+    noise.start();
+    noise.stop(this.ctx.currentTime + 0.3);
+  },
+
+  swell: function(){
+    let o = this.ctx.createOscillator();
+    let g = this.ctx.createGain();
+    o.type = "sine";
+    o.frequency.setValueAtTime(440, this.ctx.currentTime);
+    g.gain.setValueAtTime(0.001, this.ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.25, this.ctx.currentTime + 0.4);
+    g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 1.2);
+    o.connect(g).connect(this.ctx.destination);
+    o.start();
+    o.stop(this.ctx.currentTime + 1.3);
   }
 };
 
+// Unlock audio on Safari / GoDaddy
+document.body.addEventListener("click", () => {
+  if(FFSound.ctx && FFSound.ctx.state === "suspended"){
+    FFSound.ctx.resume();
+  }
+}, { once: true });
+
+// ---------------------------------------------------------
 // MEMORY ENGINE
+// ---------------------------------------------------------
+
 var FFMemory = {
   localKey: "ff-memory-local",
-  cloud: {
-    owner: "harrydavidbowyer-ai",
-    repo: "feelform-console",
-    branch: "main",
-    token: "YOUR_GITHUB_PAT_HERE" // do not commit real token
-  },
-  currentSession: {},
 
   loadLocal: function(){
     try { return JSON.parse(localStorage.getItem(this.localKey)); }
@@ -69,122 +185,16 @@ var FFMemory = {
     return this.currentSession;
   },
 
-  _githubUrlFor: function(path){
-    return "https://api.github.com/repos/" +
-      this.cloud.owner + "/" +
-      this.cloud.repo + "/contents/" + path;
-  },
-
-  _githubHeaders: function(){
-    return {
-      "Accept": "application/vnd.github+json",
-      "Authorization": "Bearer " + this.cloud.token
-    };
-  },
-
-  _fetchFile: async function(path){
-    var res = await fetch(this._githubUrlFor(path), {
-      method: "GET",
-      headers: this._githubHeaders()
-    });
-    if(res.status === 404) return { exists:false, sha:null, json:null };
-    var data = await res.json();
-    var content = atob(data.content || "");
-    var json = null;
-    try { json = JSON.parse(content); } catch(e){}
-    return { exists:true, sha:data.sha, json:json };
-  },
-
-  _putFile: async function(path, json, sha){
-    var body = {
-      message: "Update " + path + " via FeelForm Memory Engine",
-      content: btoa(JSON.stringify(json, null, 2)),
-      branch: this.cloud.branch
-    };
-    if(sha) body.sha = sha;
-
-    return fetch(this._githubUrlFor(path), {
-      method: "PUT",
-      headers: Object.assign({}, this._githubHeaders(), {
-        "Content-Type": "application/json"
-      }),
-      body: JSON.stringify(body)
-    });
-  },
-
-  writeSessionFile: async function(session){
-    var date = session.timestamp.slice(0,10);
-    var path = "memory/sessions/session-" + date + ".json";
-    return this._putFile(path, { session: session }, null);
-  },
-
-  updateIdentity: async function(session){
-    var res = await this._fetchFile("memory/identity.json");
-    var base = res.json || {};
-    if(!base.harry) base.harry = [];
-    if(session.identity && session.identity.trim().length){
-      base.harry.push({ at: session.timestamp, statement: session.identity.trim() });
-    }
-    return this._putFile("memory/identity.json", base, res.sha);
-  },
-
-  updateTrajectory: async function(session){
-    var res = await this._fetchFile("memory/trajectory.json");
-    var base = res.json || {};
-    if(!base.practitioner)
-      base.practitioner = { somatic_curve: [], amplitude_curve: [], pulse_themes: [] };
-
-    base.practitioner.somatic_curve.push({
-      at: session.timestamp,
-      location: session.somatic.location,
-      intensity: session.somatic.intensity
-    });
-
-    base.practitioner.amplitude_curve.push({
-      at: session.timestamp,
-      amplitude: session.amplitude
-    });
-
-    if(session.pulse && session.pulse.trim().length){
-      base.practitioner.pulse_themes.push({
-        at: session.timestamp,
-        text: session.pulse.trim()
-      });
-    }
-
-    return this._putFile("memory/trajectory.json", base, res.sha);
-  },
-
-  updateMeta: async function(session){
-    var res = await this._fetchFile("memory/meta.json");
-    var base = res.json || {};
-    if(!base.user) base.user = {};
-    var u = base.user;
-
-    u.cycles_completed = (u.cycles_completed || 0) + 1;
-    u.last_cycle = session.timestamp;
-    u.last_amplitude = session.amplitude;
-
-    return this._putFile("memory/meta.json", base, res.sha);
-  },
-
   persistCycle: async function(){
     var snapshot = this.captureFromDOM();
     this.saveLocal(snapshot);
-
-    try{
-      await this.writeSessionFile(snapshot);
-      await this.updateIdentity(snapshot);
-      await this.updateTrajectory(snapshot);
-      await this.updateMeta(snapshot);
-      FFLog("Memory: cloud sync complete.");
-    }catch(e){
-      FFLog("Memory: cloud sync failed.");
-    }
+    FFLog("Memory: local snapshot saved.");
   }
 };
 
+// ---------------------------------------------------------
 // MEMORY TAB RENDERING
+// ---------------------------------------------------------
 
 function FFMemory_renderSessions(local, el){
   if(!el) return;
@@ -215,89 +225,14 @@ function FFMemory_renderSessions(local, el){
   `;
 }
 
-function FFMemory_renderIdentity(json, el){
-  if(!el) return;
-  el.innerHTML = "";
-  if(!json || !json.harry || !json.harry.length){
-    el.textContent = "No identity drift yet.";
-    return;
-  }
-  json.harry.slice(-5).forEach(entry=>{
-    el.innerHTML += `
-      <div class="ff-memory-meta-row">
-        <span>${entry.at}</span>
-        <span>${entry.statement}</span>
-      </div>
-    `;
-  });
+function FFMemory_load(){
+  var local = FFMemory.loadLocal();
+  FFMemory_renderSessions(local, document.getElementById("ff-memory-sessions"));
 }
 
-function FFMemory_renderTrajectory(json, el){
-  if(!el) return;
-  el.innerHTML = "";
-  if(!json || !json.practitioner){
-    el.textContent = "No trajectory yet.";
-    return;
-  }
-
-  var p = json.practitioner;
-  var lastAmp = p.amplitude_curve?.slice(-1)[0]?.amplitude || 0;
-  var lastSom = p.somatic_curve?.slice(-1)[0] || {};
-  var lastPulse = p.pulse_themes?.slice(-1)[0] || {};
-
-  el.innerHTML = `
-    <div class="ff-memory-bar-row">
-      <div class="ff-memory-bar-label">Amplitude now</div>
-      <div class="ff-memory-bar">
-        <div class="ff-memory-bar-fill" style="width:${lastAmp}%"></div>
-      </div>
-    </div>
-
-    <div class="ff-memory-meta-row">
-      <span>Somatic now</span>
-      <span>${lastSom.location || "—"} · ${lastSom.intensity || 0}</span>
-    </div>
-
-    <div class="ff-memory-meta-row">
-      <span>Pulse theme</span>
-      <span>${lastPulse.text || "—"}</span>
-    </div>
-  `;
-}
-
-function FFMemory_renderMeta(json, el){
-  if(!el) return;
-  el.innerHTML = "";
-  if(!json || !json.user){
-    el.textContent = "No meta yet.";
-    return;
-  }
-  var u = json.user;
-
-  el.innerHTML = `
-    <div class="ff-memory-meta-row"><span>Cycles</span><span>${u.cycles_completed || 0}</span></div>
-    <div class="ff-memory-meta-row"><span>Last cycle</span><span>${u.last_cycle || "—"}</span></div>
-    <div class="ff-memory-meta-row"><span>Last amplitude</span><span>${u.last_amplitude ?? "—"}</span></div>
-  `;
-}
-
-async function FFMemory_loadCloud(){
-  try{
-    var identity = await FFMemory._fetchFile("memory/identity.json");
-    var trajectory = await FFMemory._fetchFile("memory/trajectory.json");
-    var meta = await FFMemory._fetchFile("memory/meta.json");
-    var local = FFMemory.loadLocal();
-
-    FFMemory_renderSessions(local, document.getElementById("ff-memory-sessions"));
-    FFMemory_renderIdentity(identity.json, document.getElementById("ff-memory-identity"));
-    FFMemory_renderTrajectory(trajectory.json, document.getElementById("ff-memory-trajectory"));
-    FFMemory_renderMeta(meta.json, document.getElementById("ff-memory-meta"));
-  }catch(e){
-    FFLog("Memory tab load failed.");
-  }
-}
-
+// ---------------------------------------------------------
 // CHAMBER SWITCHING
+// ---------------------------------------------------------
 
 function switchChamber(id){
   FFState.chamber = id;
@@ -308,9 +243,12 @@ function switchChamber(id){
   if(target) target.classList.add("ff-active");
 }
 
+// ---------------------------------------------------------
 // INIT
+// ---------------------------------------------------------
 
 window.onload = function(){
+
   // sound toggle
   var soundBtn = document.getElementById("ff-sound-toggle");
   if(soundBtn){
@@ -332,7 +270,7 @@ window.onload = function(){
       if(panel) panel.classList.add("ff-active");
 
       if(name === "memory"){
-        FFMemory_loadCloud();
+        FFMemory_load();
       }
     };
   });
@@ -343,7 +281,7 @@ window.onload = function(){
       var next = this.dataset.next;
       if(next){
         switchChamber(next);
-        FFSound.playEvent("step");
+        FFSound.playEvent("chamber-shift");
       }
     };
   });
@@ -360,6 +298,7 @@ window.onload = function(){
       if(ritualGlow){
         ritualGlow.classList.add("ff-on");
       }
+
       FFSound.playEvent("ritual-complete");
       FFLog("Cycle completed. Capturing memory…");
 
