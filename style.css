@@ -32,6 +32,23 @@ body {
     "Segoe UI", sans-serif;
 }
 
+/* IDENTITY GLOW */
+#ff-identity-glow {
+  height: 50px;
+  border-radius: 999px;
+  background: radial-gradient(
+    circle at center,
+    rgba(230, 199, 107, 0.45),
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 1.4s ease;
+  margin-top: 14px;
+}
+
+#ff-identity-glow.ff-active {
+  opacity: 1;
+}
 body {
   background-color: var(--ff-bg);
   transition: background-color 1.2s ease;
