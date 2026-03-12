@@ -1,17 +1,320 @@
+:root {
+  --ff-bg: #0b0b0d;
+  --ff-baseline: #0b0b0d;
+  --ff-pulse: #1a0f0f;
+  --ff-somatic: #2a0d0d;
+  --ff-reflect: #1a1024;
+  --ff-decision: #0f1a24;
+  --ff-identity: #1a1a1a;
+  --ff-ritual: #000000;
+
+  --ff-text: #f5f5f5;
+  --ff-accent: #e6c76b;
+  --ff-muted: #888888;
+  --ff-border: #2a2a2f;
+  --ff-panel: #111118;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: #000;
+  color: var(--ff-text);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "Segoe UI", sans-serif;
+}
+
+body {
+  background-color: var(--ff-bg);
+  transition: background-color 1.2s ease;
+}
+
 #ff-root {
-  width: 100vw !important;
-  height: 100vh !important;
-  max-width: 100vw !important;
-  max-height: 100vh !important;
-  overflow: hidden !important;
-  transform: none !important;
-  zoom: 1 !important;
-}#ff-root {
-  width: 100vw !important;
-  height: 100vh !important;
-  max-width: 100vw !important;
-  max-height: 100vh !important;
-  overflow: hidden !important;
-  transform: none !important;
-  zoom: 1 !important;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* HEADER */
+
+#ff-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--ff-border);
+  background: rgba(5, 5, 10, 0.95);
+  backdrop-filter: blur(12px);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+#ff-logo {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ff-muted);
+}
+
+#ff-header-center {
+  font-size: 12px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--ff-accent);
+}
+
+#ff-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+
+#ff-sound-label {
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--ff-muted);
+}
+
+#ff-sound-toggle,
+#ff-force-audio {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--ff-border);
+  background: transparent;
+  color: var(--ff-text);
+  cursor: pointer;
+}
+
+#ff-force-audio {
+  color: var(--ff-accent);
+}
+
+/* CONSOLE */
+
+#ff-console {
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid var(--ff-border);
+  background: radial-gradient(circle at top, #181824 0, #050509 55%);
+}
+
+#ff-console-tabs {
+  display: flex;
+  gap: 12px;
+  padding: 10px 20px 0;
+}
+
+.ff-console-tab {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  color: var(--ff-muted);
+  cursor: pointer;
+}
+
+.ff-console-tab.ff-active {
+  border-color: var(--ff-border);
+  color: var(--ff-accent);
+  background: rgba(10, 10, 18, 0.9);
+}
+
+#ff-console-panels {
+  display: flex;
+  padding: 12px 20px 16px;
+}
+
+.ff-console-panel {
+  display: none;
+  width: 100%;
+}
+
+.ff-console-panel.ff-active {
+  display: block;
+}
+
+.ff-console-block {
+  border-radius: 12px;
+  border: 1px solid var(--ff-border);
+  background: rgba(8, 8, 14, 0.9);
+  padding: 14px 16px;
+}
+
+.ff-console-block h2 {
+  margin: 0 0 6px;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ff-muted);
+}
+
+.ff-console-block p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ff-text);
+}
+
+/* MEMORY PANEL */
+
+.ff-memory-section {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  width: 100%;
+}
+
+.ff-memory-title {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ff-muted);
+  margin: 0 0 4px;
+}
+
+.ff-memory-block {
+  border-radius: 10px;
+  border: 1px solid var(--ff-border);
+  background: rgba(8, 8, 14, 0.9);
+  padding: 10px 12px;
+  min-height: 80px;
+}
+
+.ff-memory-block h3 {
+  margin: 0 0 4px;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ff-accent);
+}
+
+.ff-memory-list {
+  font-size: 12px;
+  color: var(--ff-muted);
+}
+
+/* CHAMBERS */
+
+#ff-chambers {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 20px 32px;
+  gap: 18px;
+}
+
+.ff-chamber {
+  display: none;
+  border-radius: 16px;
+  border: 1px solid var(--ff-border);
+  background: rgba(8, 8, 14, 0.9);
+  padding: 18px 18px 20px;
+}
+
+.ff-chamber.ff-active {
+  display: block;
+}
+
+.ff-chamber h1 {
+  margin: 0 0 6px;
+  font-size: 16px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ff-accent);
+}
+
+.ff-chamber p {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--ff-text);
+}
+
+textarea,
+input[type="text"],
+input:not([type]),
+input[type="range"] {
+  width: 100%;
+  font-family: inherit;
+  font-size: 13px;
+  border-radius: 10px;
+  border: 1px solid var(--ff-border);
+  background: rgba(5, 5, 10, 0.9);
+  color: var(--ff-text);
+  padding: 8px 10px;
+  outline: none;
+}
+
+textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.ff-range-label {
+  display: block;
+  font-size: 11px;
+  color: var(--ff-muted);
+  margin-top: 8px;
+}
+
+.ff-next,
+#ff-ritual-complete {
+  margin-top: 12px;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--ff-border);
+  background: transparent;
+  color: var(--ff-accent);
+  cursor: pointer;
+}
+
+/* RITUAL */
+
+#ff-ritual-sub {
+  font-size: 12px;
+  color: var(--ff-muted);
+  margin-bottom: 10px;
+}
+
+#ff-ritual-glow {
+  height: 40px;
+  border-radius: 999px;
+  background: radial-gradient(circle at center, rgba(230, 199, 107, 0.35), transparent 70%);
+  opacity: 0;
+  transition: opacity 1.2s ease;
+}
+
+#ff-ritual-glow.ff-active {
+  opacity: 1;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 800px) {
+  #ff-console-panels {
+    padding: 10px 12px 14px;
+  }
+
+  #ff-chambers {
+    padding: 18px 12px 24px;
+  }
+
+  .ff-memory-section {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
