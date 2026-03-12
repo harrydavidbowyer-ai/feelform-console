@@ -47,16 +47,12 @@ var FFSound = {
     }
   },
 
-  // -------------------------------------------------------
-  // SOUND TYPES
-  // -------------------------------------------------------
-
   click: function(){
     let o = this.ctx.createOscillator();
     let g = this.ctx.createGain();
     o.type = "square";
     o.frequency.value = 240;
-    g.gain.setValueAtTime(0.15, this.ctx.currentTime);
+    g.gain.setValueAtTime(0.25, this.ctx.currentTime);
     g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.05);
     o.connect(g).connect(this.ctx.destination);
     o.start();
@@ -68,7 +64,7 @@ var FFSound = {
     let g = this.ctx.createGain();
     o.type = "sine";
     o.frequency.setValueAtTime(660, this.ctx.currentTime);
-    g.gain.setValueAtTime(0.2, this.ctx.currentTime);
+    g.gain.setValueAtTime(0.3, this.ctx.currentTime);
     g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.4);
     o.connect(g).connect(this.ctx.destination);
     o.start();
@@ -80,7 +76,7 @@ var FFSound = {
     let g = this.ctx.createGain();
     o.type = "sine";
     o.frequency.setValueAtTime(140, this.ctx.currentTime);
-    g.gain.setValueAtTime(0.25, this.ctx.currentTime);
+    g.gain.setValueAtTime(0.35, this.ctx.currentTime);
     g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.3);
     o.connect(g).connect(this.ctx.destination);
     o.start();
@@ -92,7 +88,7 @@ var FFSound = {
     let g = this.ctx.createGain();
     o.type = "triangle";
     o.frequency.setValueAtTime(880, this.ctx.currentTime);
-    g.gain.setValueAtTime(0.15, this.ctx.currentTime);
+    g.gain.setValueAtTime(0.25, this.ctx.currentTime);
     g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.6);
     o.connect(g).connect(this.ctx.destination);
     o.start();
@@ -112,7 +108,7 @@ var FFSound = {
     noise.buffer = noiseBuffer;
 
     let g = this.ctx.createGain();
-    g.gain.setValueAtTime(0.2, this.ctx.currentTime);
+    g.gain.setValueAtTime(0.25, this.ctx.currentTime);
     g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.25);
 
     noise.connect(g).connect(this.ctx.destination);
@@ -126,7 +122,7 @@ var FFSound = {
     o.type = "sine";
     o.frequency.setValueAtTime(440, this.ctx.currentTime);
     g.gain.setValueAtTime(0.001, this.ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.25, this.ctx.currentTime + 0.4);
+    g.gain.exponentialRampToValueAtTime(0.35, this.ctx.currentTime + 0.4);
     g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 1.2);
     o.connect(g).connect(this.ctx.destination);
     o.start();
@@ -134,12 +130,26 @@ var FFSound = {
   }
 };
 
-// Unlock audio on Safari / GoDaddy
-document.body.addEventListener("click", () => {
+// ---------------------------------------------------------
+// FORCE AUDIO RESUME BUTTON
+// ---------------------------------------------------------
+
+function FF_checkAudioState(){
   if(FFSound.ctx && FFSound.ctx.state === "suspended"){
-    FFSound.ctx.resume();
+    let btn = document.getElementById("ff-force-audio");
+    if(btn) btn.style.display = "inline-block";
   }
-}, { once: true });
+}
+
+function FF_forceResumeAudio(){
+  if(FFSound.ctx){
+    FFSound.ctx.resume().then(()=>{
+      let btn = document.getElementById("ff-force-audio");
+      if(btn) btn.style.display = "none";
+      console.log("Audio resumed manually.");
+    });
+  }
+}
 
 // ---------------------------------------------------------
 // MEMORY ENGINE
@@ -249,7 +259,6 @@ function switchChamber(id){
 
 window.onload = function(){
 
-  // sound toggle
   var soundBtn = document.getElementById("ff-sound-toggle");
   if(soundBtn){
     soundBtn.onclick = function(){
@@ -257,7 +266,13 @@ window.onload = function(){
     };
   }
 
-  // tabs
+  var forceBtn = document.getElementById("ff-force-audio");
+  if(forceBtn){
+    forceBtn.onclick = FF_forceResumeAudio;
+  }
+
+  document.addEventListener("click", FF_checkAudioState);
+
   document.querySelectorAll(".ff-console-tab").forEach(tab=>{
     tab.onclick = function(){
       var name = this.dataset.tab;
@@ -275,7 +290,6 @@ window.onload = function(){
     };
   });
 
-  // chamber navigation
   document.querySelectorAll(".ff-next").forEach(btn=>{
     btn.onclick = function(){
       var next = this.dataset.next;
@@ -286,7 +300,6 @@ window.onload = function(){
     };
   });
 
-  // ritual complete
   var ritualBtn = document.getElementById("ff-ritual-complete");
   var ritualGlow = document.getElementById("ff-ritual-glow");
   if(ritualBtn){
@@ -313,10 +326,8 @@ window.onload = function(){
     };
   }
 
-  // start at baseline
   switchChamber("baseline");
 
-  // log local memory presence
   var last = FFMemory.loadLocal();
   if(last){
     FFLog("Memory: local snapshot from " + last.timestamp);
