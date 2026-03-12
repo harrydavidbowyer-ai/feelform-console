@@ -39,7 +39,7 @@ var FFSound = {
 
     switch(name){
       case "step": this.click(); break;
-      case "pulse": this.ping(); break;
+      case "pulse": this.ping(); this.heartbeat(); break;
       case "somatic": this.lowTone(); break;
       case "identity": this.shimmer(); break;
       case "chamber-shift": this.whoosh(); break;
@@ -83,37 +83,69 @@ var FFSound = {
     o.stop(this.ctx.currentTime + 0.35);
   },
 
+  // GLASSIER, SOFTER IDENTITY SHIMMER
   shimmer: function(){
     let o = this.ctx.createOscillator();
     let g = this.ctx.createGain();
-    o.type = "triangle";
-    o.frequency.setValueAtTime(880, this.ctx.currentTime);
-    g.gain.setValueAtTime(0.25, this.ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.6);
-    o.connect(g).connect(this.ctx.destination);
+
+    o.type = "sine";
+    o.frequency.setValueAtTime(1040, this.ctx.currentTime);
+
+    let filter = this.ctx.createBiquadFilter();
+    filter.type = "highpass";
+    filter.frequency.setValueAtTime(900, this.ctx.currentTime);
+
+    g.gain.setValueAtTime(0.18, this.ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 1.1);
+
+    o.connect(filter).connect(g).connect(this.ctx.destination);
     o.start();
-    o.stop(this.ctx.currentTime + 0.7);
+    o.stop(this.ctx.currentTime + 1.2);
   },
 
+  // DARKER, DEEPER CHAMBER WHOOSH
   whoosh: function(){
     let bufferSize = 2 * this.ctx.sampleRate;
     let noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
     let output = noiseBuffer.getChannelData(0);
 
     for (let i = 0; i < bufferSize; i++) {
-      output[i] = (Math.random() * 2 - 1) * 0.3;
+      output[i] = (Math.random() * 2 - 1) * 0.25;
     }
 
     let noise = this.ctx.createBufferSource();
     noise.buffer = noiseBuffer;
 
-    let g = this.ctx.createGain();
-    g.gain.setValueAtTime(0.25, this.ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.25);
+    let filter = this.ctx.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(420, this.ctx.currentTime);
 
-    noise.connect(g).connect(this.ctx.destination);
+    let g = this.ctx.createGain();
+    g.gain.setValueAtTime(0.35, this.ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.45);
+
+    noise.connect(filter).connect(g).connect(this.ctx.destination);
     noise.start();
-    noise.stop(this.ctx.currentTime + 0.3);
+    noise.stop(this.ctx.currentTime + 0.5);
+  },
+
+  // HEARTBEAT UNDER PULSE
+  heartbeat: function(){
+    let t = this.ctx.currentTime;
+
+    let o = this.ctx.createOscillator();
+    let g = this.ctx.createGain();
+
+    o.type = "sine";
+    o.frequency.setValueAtTime(60, t);
+
+    g.gain.setValueAtTime(0.001, t);
+    g.gain.exponentialRampToValueAtTime(0.4, t + 0.05);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+
+    o.connect(g).connect(this.ctx.destination);
+    o.start();
+    o.stop(t + 0.3);
   },
 
   swell: function(){
