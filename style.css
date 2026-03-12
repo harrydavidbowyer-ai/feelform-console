@@ -1,3 +1,96 @@
+.ff-memory-shell {
+  background: #05060a;
+  border-top: 1px solid #151827;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ff-memory-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.ff-memory-panel {
+  background: #05070d;
+  border: 1px solid #151827;
+  border-radius: 6px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.ff-memory-panel header {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #7f8bb0;
+  margin-bottom: 6px;
+}
+
+.ff-memory-panel pre {
+  flex: 1;
+  margin: 0;
+  padding: 8px;
+  background: #020309;
+  border-radius: 4px;
+  font-size: 11px;
+  color: #e5e7eb;
+  overflow: auto;
+}
+
+.ff-memory-inputs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.ff-memory-inputs label {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #6b7280;
+  margin-bottom: 3px;
+  display: block;
+}
+
+.ff-memory-inputs input,
+.ff-memory-inputs textarea {
+  width: 100%;
+  box-sizing: border-box;
+  background: #020309;
+  border: 1px solid #151827;
+  border-radius: 4px;
+  color: #f9fafb;
+  font-size: 12px;
+  padding: 6px 8px;
+}
+
+.ff-memory-controls {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  align-items: center;
+}
+
+.ff-memory-controls button {
+  padding: 6px 12px;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  border-radius: 4px;
+  border: 1px solid #3b82f6;
+  background: #020617;
+  color: #dbeafe;
+  cursor: pointer;
+}
+
+.ff-memory-controls span {
+  font-size: 11px;
+  color: #9ca3af;
+}
 :root {
   --ff-bg: #0b0b0d;
   --ff-baseline: #0b0b0d;
