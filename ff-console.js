@@ -1,522 +1,385 @@
-window.onload = function(){
+// SIMPLE LOG
+function FFLog(msg){ console.log("[FeelForm]", msg); }
 
-  // FEELFORM OS STATE
-  var FFState = {
-    current: "baseline",
-    history: [],
-    pipeline: [
-      "baseline",
-      "threshold",
-      "pulse",
-      "somatic",
-      "reflection",
-      "decision",
-      "identity",
-      "ritual"
-    ],
-    index: 0
-  };
+// STATE
+var FFState = {
+  chamber: "baseline"
+};
 
-  // CONSOLE LOGGER
-  function FFLog(msg){
-    var log = document.getElementById("ff-log");
-    if(!log) return;
-    var entry = document.createElement("div");
-    entry.className = "ff-console-log-entry";
-    entry.textContent = msg;
-    log.prepend(entry);
+// SOUND STUB
+var FFSound = {
+  on: false,
+  toggle: function(){
+    this.on = !this.on;
+    var btn = document.getElementById("ff-sound-toggle");
+    if(btn) btn.textContent = this.on ? "ON" : "OFF";
+  },
+  playEvent: function(name){
+    if(!this.on) return;
+    // hook real audio here if desired
+    FFLog("Sound event: " + name);
   }
+};
 
-  // SOUND ENGINE (hybrid: synthetic + sampled)
-  var audioCtx = null;
-  function ensureAudioCtx(){
-    if(!audioCtx){
-      try{
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      }catch(e){}
-    }
-  }
+// MEMORY ENGINE
+var FFMemory = {
+  localKey: "ff-memory-local",
+  cloud: {
+    owner: "harrydavidbowyer-ai",
+    repo: "feelform-console",
+    branch: "main",
+    token: "YOUR_GITHUB_PAT_HERE" // do not commit real token
+  },
+  currentSession: {},
 
-  var FFSound = {
-    enabled: true,
-    setEnabled: function(on){
-      this.enabled = !!on;
-      try{
-        localStorage.setItem("ff-sound-enabled", this.enabled ? "1" : "0");
-      }catch(e){}
-    },
-    loadPreference: function(){
-      try{
-        var v = localStorage.getItem("ff-sound-enabled");
-        if(v === "0") this.enabled = false;
-        if(v === "1") this.enabled = true;
-      }catch(e){}
-    },
-    playTone: function(freq, dur){
-      if(!this.enabled) return;
-      ensureAudioCtx();
-      if(!audioCtx) return;
-      var osc = audioCtx.createOscillator();
-      var gain = audioCtx.createGain();
-      osc.type = "sine";
-      osc.frequency.value = freq;
-      gain.gain.value = 0.12;
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start();
-      setTimeout(function(){
-        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.15);
-        osc.stop(audioCtx.currentTime + 0.16);
-      }, dur || 120);
-    },
-    playSample: function(id){
-      if(!this.enabled) return;
-      var el = document.getElementById(id);
-      if(!el) return;
-      el.currentTime = 0;
-      el.volume = 0.35;
-      el.play().catch(function(){});
-    },
-    playEvent: function(name){
-      if(!this.enabled) return;
-      switch(name){
-        case "baseline-arrive":
-          this.playTone(180, 140);
-          break;
-        case "threshold-cross":
-          this.playTone(260, 180);
-          break;
-        case "pulse-type":
-          this.playTone(420, 60);
-          break;
-        case "somatic-move":
-          this.playTone(120, 80);
-          break;
-        case "reflection-distill":
-          this.playSample("snd-reflection");
-          break;
-        case "decision-eval":
-          this.playSample("snd-decision");
-          break;
-        case "identity-affirm":
-          this.playSample("snd-identity");
-          break;
-        case "ritual-complete":
-          this.playSample("snd-ritual");
-          break;
-        case "transition":
-          this.playTone(220, 80);
-          break;
-      }
-    }
-  };
+  loadLocal: function(){
+    try { return JSON.parse(localStorage.getItem(this.localKey)); }
+    catch(e){ return null; }
+  },
 
-  FFSound.loadPreference();
+  saveLocal: function(snapshot){
+    try { localStorage.setItem(this.localKey, JSON.stringify(snapshot)); }
+    catch(e){}
+  },
 
-  // ENGINES
-  var FFEngines = {
+  captureFromDOM: function(){
+    var pulse = document.getElementById("ff-pulse-input")?.value || "";
+    var somLoc = document.getElementById("ff-somatic-location")?.value || "";
+    var somInt = parseInt(document.getElementById("ff-somatic-intensity")?.value || "0",10);
+    var reflection = document.getElementById("ff-reflect-input")?.value || "";
+    var identity = document.getElementById("ff-identity-input")?.value || "";
 
-    reflection(input){
-      input = input || "";
-      var insight = "";
-      if(input.trim().length > 0){
-        insight = "You’re noticing: " + input.trim();
-      } else {
-        insight = "No reflection entered.";
-      }
-      FFLog("Reflection Engine processed " + input.length + " chars");
-      return insight;
-    },
+    var decA = document.getElementById("ff-decision-a")?.value || "";
+    var decB = document.getElementById("ff-decision-b")?.value || "";
+    var decision = (decA || decB) ? (decA + " / " + decB) : "";
 
-    decision(a, b){
-      a = a || "";
-      b = b || "";
-      var out = "";
-      if(a && !b) out = "Path A is clearer.";
-      else if(b && !a) out = "Path B is clearer.";
-      else if(a && b) out = "Both paths hold weight. Choose the one that feels lighter.";
-      else out = "No decision entered.";
-      FFLog("Decision Engine evaluated A/B");
-      return out;
-    },
+    var amplitude = Math.max(0, Math.min(100, somInt || 0));
 
-    identity(input){
-      input = input || "";
-      var out = "";
-      if(input.trim().length > 0){
-        out = "You are becoming someone who " + input.trim();
-      } else {
-        out = "Identity not yet articulated.";
-      }
-      FFLog("Identity Engine synthesized identity");
-      return out;
-    },
-
-    ritual(step){
-      FFLog("Ritual Engine advanced to step " + step);
-      return "Step " + step + " acknowledged.";
-    }
-
-  };
-
-  // CONSOLE TOGGLE + SOUND TOGGLE
-  var toggle = document.getElementById("ff-console-toggle");
-  var panel = document.getElementById("ff-console");
-  var soundToggle = document.getElementById("ff-sound-toggle");
-
-  toggle.onclick = function(){
-    if(panel.className.indexOf("is-open")>-1){
-      panel.className = "ff-console";
-    } else {
-      panel.className = "ff-console is-open";
-    }
-  };
-
-  function refreshSoundToggle(){
-    if(!soundToggle) return;
-    if(FFSound.enabled){
-      soundToggle.className = "ff-sound-toggle is-on";
-      soundToggle.textContent = "ON";
-    }else{
-      soundToggle.className = "ff-sound-toggle";
-      soundToggle.textContent = "OFF";
-    }
-  }
-  refreshSoundToggle();
-
-  soundToggle.onclick = function(){
-    FFSound.setEnabled(!FFSound.enabled);
-    refreshSoundToggle();
-    FFSound.playEvent("transition");
-  };
-
-  // CHAMBERS + NAV
-  var chambers = ["baseline","threshold","pulse","somatic","reflection","decision","identity","ritual"];
-  var chamberEls = {};
-  var navEls = {};
-
-  for(var i=0;i<chambers.length;i++){
-    var id = chambers[i];
-    chamberEls[id] = document.getElementById("ch-" + id);
-    navEls[id] = document.getElementById("nav-" + id);
-  }
-
-  // directional map for subtle hybrid transitions
-  var transitionMap = {
-    baseline: { enter:null,          exit:null },
-    threshold:{ enter:"forward",     exit:"backward" },
-    pulse:    { enter:"up",          exit:"down" },
-    somatic:  { enter:"down",        exit:"up" },
-    reflection:{enter:"inward",      exit:"outward" },
-    decision: { enter:"outward",     exit:"inward" },
-    identity: { enter:"expand",      exit:"contract" },
-    ritual:   { enter:"ritual-enter",exit:"ritual-exit" }
-  };
-
-  var currentChamber = "baseline";
-  var isTransitioning = false;
-  var transitionGap = 140; // liminal pause (ms)
-
-  function applyDirectionClass(el, mode, chamberKey){
-    var cfg = transitionMap[chamberKey];
-    if(!cfg) return;
-    var dir = cfg[mode];
-    if(!dir) return;
-
-    var base = "ff-chamber";
-
-    if(mode === "enter"){
-      if(dir === "forward")        el.className = base + " ff-chamber--enter-forward";
-      else if(dir === "backward") el.className = base + " ff-chamber--exit-backward";
-      else if(dir === "up")       el.className = base + " ff-chamber--enter-up";
-      else if(dir === "down")     el.className = base + " ff-chamber--enter-down";
-      else if(dir === "inward")   el.className = base + " ff-chamber--enter-inward";
-      else if(dir === "outward")  el.className = base + " ff-chamber--exit-outward";
-      else if(dir === "expand")   el.className = base + " ff-chamber--enter-expand";
-      else if(dir === "contract") el.className = base + " ff-chamber--exit-contract";
-      else if(dir === "ritual-enter") el.className = base + " ff-chamber--ritual-enter";
-    } else {
-      if(dir === "forward")        el.className = base + " ff-chamber--enter-forward";
-      else if(dir === "backward") el.className = base + " ff-chamber--exit-backward";
-      else if(dir === "up")       el.className = base + " ff-chamber--exit-up";
-      else if(dir === "down")     el.className = base + " ff-chamber--exit-down";
-      else if(dir === "inward")   el.className = base + " ff-chamber--enter-inward";
-      else if(dir === "outward")  el.className = base + " ff-chamber--exit-outward";
-      else if(dir === "expand")   el.className = base + " ff-chamber--enter-expand";
-      else if(dir === "contract") el.className = base + " ff-chamber--exit-contract";
-      else if(dir === "ritual-exit") el.className = base + " ff-chamber--ritual-exit";
-    }
-  }
-
-  function switchChamber(target){
-    if(isTransitioning || target === currentChamber) return;
-    isTransitioning = true;
-
-    var from = currentChamber;
-    var to   = target;
-
-    FFLog("Transition: " + from + " → " + to);
-    FFSound.playEvent("transition");
-
-    FFState.history.push(from);
-    FFState.current = to;
-    FFState.index = FFState.pipeline.indexOf(to);
-
-    var fromEl = chamberEls[from];
-    var toEl   = chamberEls[to];
-
-    // exit current
-    applyDirectionClass(fromEl, "exit", from);
-    fromEl.className += " is-active";
-
-    setTimeout(function(){
-
-      // hide old
-      fromEl.className = "ff-chamber";
-
-      // prepare incoming
-      applyDirectionClass(toEl, "enter", to);
-
-      setTimeout(function(){
-        toEl.className += " is-active";
-        currentChamber = to;
-
-        // update nav
-        for(var j=0;j<chambers.length;j++){
-          var cid = chambers[j];
-          navEls[cid].className = "ff-nav-glyph";
-        }
-        navEls[to].className = "ff-nav-glyph is-active";
-
-        FFLog("Pipeline index: " + FFState.index + " / " + (FFState.pipeline.length - 1));
-
-        // ENGINE HOOKS
-        if(to === "reflection"){
-          var rIn = document.getElementById("ff-reflect-input");
-          var rOut = document.getElementById("ff-reflect-output");
-          if(rIn && rOut && rIn.value){
-            rOut.textContent = FFEngines.reflection(rIn.value);
-          }
-        }
-
-        if(to === "decision"){
-          var aEl = document.getElementById("ff-decision-a");
-          var bEl = document.getElementById("ff-decision-b");
-          var dOut = document.getElementById("ff-decision-output");
-          if(aEl && bEl && dOut && (aEl.value || bEl.value)){
-            dOut.textContent = FFEngines.decision(aEl.value, bEl.value);
-          }
-        }
-
-        if(to === "identity"){
-          var iEl = document.getElementById("ff-identity-input");
-          var iOut = document.getElementById("ff-identity-output");
-          if(iEl && iOut && iEl.value){
-            iOut.textContent = FFEngines.identity(iEl.value);
-          }
-        }
-
-        if(to === "ritual"){
-          var step = FFState.index + 1;
-          var rSub = document.getElementById("ff-ritual-sub");
-          if(rSub){
-            rSub.textContent = FFEngines.ritual(step);
-          }
-        }
-
-        isTransitioning = false;
-
-      }, 10);
-
-    }, transitionGap);
-  }
-
-  // nav bindings
-  for(var k=0;k<chambers.length;k++){
-    (function(ch){
-      navEls[ch].onclick = function(){
-        switchChamber(ch);
-      };
-    })(chambers[k]);
-  }
-
-  // TIMING DOTS
-  var pulseDot = document.getElementById("timing-pulse");
-  var driftDot = document.getElementById("timing-drift");
-  var pulseOn = false;
-  var driftOn = false;
-
-  setInterval(function(){
-    pulseOn = !pulseOn;
-    driftOn = !driftOn;
-
-    if(pulseDot){
-      pulseDot.className = pulseOn ? "ff-console-timing-dot is-on" : "ff-console-timing-dot";
-    }
-    if(driftDot){
-      driftDot.className = driftOn ? "ff-console-timing-dot is-on" : "ff-console-timing-dot";
-    }
-
-  },1000);
-
-  // INITIAL STATE
-  switchChamber("baseline");
-
-  // CINEMATIC INTERACTIONS
-
-  // Baseline: arrival button
-  var baselineBtn = document.getElementById("ff-baseline-arrive");
-  if(baselineBtn){
-    baselineBtn.onclick = function(){
-      FFLog("Arrival acknowledged.");
-      FFSound.playEvent("baseline-arrive");
-      switchChamber("threshold");
+    this.currentSession = {
+      index: Date.now(),
+      timestamp: new Date().toISOString(),
+      pulse: pulse,
+      somatic: { location: somLoc, intensity: somInt },
+      reflection: reflection,
+      decision: decision,
+      identity: identity,
+      amplitude: amplitude
     };
-  }
 
-  // Threshold: drag bar
-  var thresholdBar = document.getElementById("ff-threshold-bar");
-  var thresholdHandle = document.getElementById("ff-threshold-handle");
-  var dragging = false;
-  var barRect = null;
+    return this.currentSession;
+  },
 
-  function startDrag(e){
-    dragging = true;
-    barRect = thresholdBar.getBoundingClientRect();
-    e.preventDefault();
-  }
-  function moveDrag(e){
-    if(!dragging) return;
-    var clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    var rel = (clientX - barRect.left) / barRect.width;
-    if(rel < 0) rel = 0;
-    if(rel > 1) rel = 1;
-    thresholdHandle.style.left = (rel * 100) + "%";
-    if(rel > 0.96){
-      dragging = false;
-      thresholdBar.className = "ff-threshold-bar ff-crossed";
-      FFLog("Threshold crossed.");
-      FFSound.playEvent("threshold-cross");
-      setTimeout(function(){
-        switchChamber("pulse");
-      }, 220);
-    }
-  }
-  function endDrag(){
-    dragging = false;
-  }
+  _githubUrlFor: function(path){
+    return "https://api.github.com/repos/" +
+      this.cloud.owner + "/" +
+      this.cloud.repo + "/contents/" + path;
+  },
 
-  if(thresholdHandle && thresholdBar){
-    thresholdHandle.addEventListener("mousedown", startDrag);
-    thresholdHandle.addEventListener("touchstart", startDrag, {passive:false});
-    window.addEventListener("mousemove", moveDrag);
-    window.addEventListener("touchmove", moveDrag, {passive:false});
-    window.addEventListener("mouseup", endDrag);
-    window.addEventListener("touchend", endDrag);
-  }
+  _githubHeaders: function(){
+    return {
+      "Accept": "application/vnd.github+json",
+      "Authorization": "Bearer " + this.cloud.token
+    };
+  },
 
-  // Pulse: orb reacts to typing
-  var pulseInput = document.getElementById("ff-pulse-input");
-  var pulseOrb = document.getElementById("ff-pulse-orb");
-  if(pulseInput && pulseOrb){
-    pulseInput.addEventListener("input", function(){
-      var len = (pulseInput.value || "").length;
-      if(len > 0){
-        pulseOrb.className = "ff-pulse-orb ff-pulse-strong";
-        FFSound.playEvent("pulse-type");
-      }else{
-        pulseOrb.className = "ff-pulse-orb";
-      }
-      FFLog("Pulse registered: " + (pulseInput.value || "").slice(0,80));
+  _fetchFile: async function(path){
+    var res = await fetch(this._githubUrlFor(path), {
+      method: "GET",
+      headers: this._githubHeaders()
     });
-  }
+    if(res.status === 404) return { exists:false, sha:null, json:null };
+    var data = await res.json();
+    var content = atob(data.content || "");
+    var json = null;
+    try { json = JSON.parse(content); } catch(e){}
+    return { exists:true, sha:data.sha, json:json };
+  },
 
-  // Somatic: slider + body map
-  var somLoc = document.getElementById("ff-somatic-location");
-  var somInt = document.getElementById("ff-somatic-intensity");
-  var somOut = document.getElementById("ff-somatic-output");
+  _putFile: async function(path, json, sha){
+    var body = {
+      message: "Update " + path + " via FeelForm Memory Engine",
+      content: btoa(JSON.stringify(json, null, 2)),
+      branch: this.cloud.branch
+    };
+    if(sha) body.sha = sha;
 
-  function updateSomatic(){
-    if(!somOut) return;
-    var loc = somLoc ? somLoc.value : "";
-    var val = somInt ? somInt.value : "0";
-    if(loc){
-      somOut.textContent = "Somatic intensity: " + val + " (" + loc + ")";
-    }else{
-      somOut.textContent = "Somatic intensity: " + val;
+    return fetch(this._githubUrlFor(path), {
+      method: "PUT",
+      headers: Object.assign({}, this._githubHeaders(), {
+        "Content-Type": "application/json"
+      }),
+      body: JSON.stringify(body)
+    });
+  },
+
+  writeSessionFile: async function(session){
+    var date = session.timestamp.slice(0,10);
+    var path = "memory/sessions/session-" + date + ".json";
+    return this._putFile(path, { session: session }, null);
+  },
+
+  updateIdentity: async function(session){
+    var res = await this._fetchFile("memory/identity.json");
+    var base = res.json || {};
+    if(!base.harry) base.harry = [];
+    if(session.identity && session.identity.trim().length){
+      base.harry.push({ at: session.timestamp, statement: session.identity.trim() });
     }
-    FFSound.playEvent("somatic-move");
-    FFLog("Somatic intensity: " + val + (loc ? " ("+loc+")" : ""));
+    return this._putFile("memory/identity.json", base, res.sha);
+  },
+
+  updateTrajectory: async function(session){
+    var res = await this._fetchFile("memory/trajectory.json");
+    var base = res.json || {};
+    if(!base.practitioner)
+      base.practitioner = { somatic_curve: [], amplitude_curve: [], pulse_themes: [] };
+
+    base.practitioner.somatic_curve.push({
+      at: session.timestamp,
+      location: session.somatic.location,
+      intensity: session.somatic.intensity
+    });
+
+    base.practitioner.amplitude_curve.push({
+      at: session.timestamp,
+      amplitude: session.amplitude
+    });
+
+    if(session.pulse && session.pulse.trim().length){
+      base.practitioner.pulse_themes.push({
+        at: session.timestamp,
+        text: session.pulse.trim()
+      });
+    }
+
+    return this._putFile("memory/trajectory.json", base, res.sha);
+  },
+
+  updateMeta: async function(session){
+    var res = await this._fetchFile("memory/meta.json");
+    var base = res.json || {};
+    if(!base.user) base.user = {};
+    var u = base.user;
+
+    u.cycles_completed = (u.cycles_completed || 0) + 1;
+    u.last_cycle = session.timestamp;
+    u.last_amplitude = session.amplitude;
+
+    return this._putFile("memory/meta.json", base, res.sha);
+  },
+
+  persistCycle: async function(){
+    var snapshot = this.captureFromDOM();
+    this.saveLocal(snapshot);
+
+    try{
+      await this.writeSessionFile(snapshot);
+      await this.updateIdentity(snapshot);
+      await this.updateTrajectory(snapshot);
+      await this.updateMeta(snapshot);
+      FFLog("Memory: cloud sync complete.");
+    }catch(e){
+      FFLog("Memory: cloud sync failed.");
+    }
+  }
+};
+
+// MEMORY TAB RENDERING
+
+function FFMemory_renderSessions(local, el){
+  if(!el) return;
+  el.innerHTML = "";
+  if(!local){
+    el.textContent = "No local session snapshot yet.";
+    return;
   }
 
-  if(somLoc) somLoc.addEventListener("change", updateSomatic);
-  if(somInt) somInt.addEventListener("input", updateSomatic);
+  el.innerHTML = `
+    <div class="ff-memory-meta-row">
+      <span>Last session</span>
+      <span>${local.timestamp}</span>
+    </div>
 
-  // Reflection: Distill button
-  var refBtn = document.getElementById("ff-reflect-distill");
-  if(refBtn){
-    refBtn.onclick = function(){
-      var rIn = document.getElementById("ff-reflect-input");
-      var rOut = document.getElementById("ff-reflect-output");
-      if(rIn && rOut){
-        rOut.textContent = FFEngines.reflection(rIn.value || "");
-        FFSound.playEvent("reflection-distill");
-        FFLog("Reflection distilled.");
-      }
+    <div class="ff-memory-bar-row">
+      <div class="ff-memory-bar-label">Amplitude</div>
+      <div class="ff-memory-bar">
+        <div class="ff-memory-bar-fill" style="width:${local.amplitude}%"></div>
+      </div>
+    </div>
+
+    <div><span class="ff-memory-pill">Pulse</span> ${local.pulse || "—"}</div>
+    <div><span class="ff-memory-pill">Somatic</span> ${local.somatic.location || "—"} · ${local.somatic.intensity || 0}</div>
+    <div><span class="ff-memory-pill">Reflection</span> ${local.reflection || "—"}</div>
+    <div><span class="ff-memory-pill">Decision</span> ${local.decision || "—"}</div>
+    <div><span class="ff-memory-pill">Identity</span> ${local.identity || "—"}</div>
+  `;
+}
+
+function FFMemory_renderIdentity(json, el){
+  if(!el) return;
+  el.innerHTML = "";
+  if(!json || !json.harry || !json.harry.length){
+    el.textContent = "No identity drift yet.";
+    return;
+  }
+  json.harry.slice(-5).forEach(entry=>{
+    el.innerHTML += `
+      <div class="ff-memory-meta-row">
+        <span>${entry.at}</span>
+        <span>${entry.statement}</span>
+      </div>
+    `;
+  });
+}
+
+function FFMemory_renderTrajectory(json, el){
+  if(!el) return;
+  el.innerHTML = "";
+  if(!json || !json.practitioner){
+    el.textContent = "No trajectory yet.";
+    return;
+  }
+
+  var p = json.practitioner;
+  var lastAmp = p.amplitude_curve?.slice(-1)[0]?.amplitude || 0;
+  var lastSom = p.somatic_curve?.slice(-1)[0] || {};
+  var lastPulse = p.pulse_themes?.slice(-1)[0] || {};
+
+  el.innerHTML = `
+    <div class="ff-memory-bar-row">
+      <div class="ff-memory-bar-label">Amplitude now</div>
+      <div class="ff-memory-bar">
+        <div class="ff-memory-bar-fill" style="width:${lastAmp}%"></div>
+      </div>
+    </div>
+
+    <div class="ff-memory-meta-row">
+      <span>Somatic now</span>
+      <span>${lastSom.location || "—"} · ${lastSom.intensity || 0}</span>
+    </div>
+
+    <div class="ff-memory-meta-row">
+      <span>Pulse theme</span>
+      <span>${lastPulse.text || "—"}</span>
+    </div>
+  `;
+}
+
+function FFMemory_renderMeta(json, el){
+  if(!el) return;
+  el.innerHTML = "";
+  if(!json || !json.user){
+    el.textContent = "No meta yet.";
+    return;
+  }
+  var u = json.user;
+
+  el.innerHTML = `
+    <div class="ff-memory-meta-row"><span>Cycles</span><span>${u.cycles_completed || 0}</span></div>
+    <div class="ff-memory-meta-row"><span>Last cycle</span><span>${u.last_cycle || "—"}</span></div>
+    <div class="ff-memory-meta-row"><span>Last amplitude</span><span>${u.last_amplitude ?? "—"}</span></div>
+  `;
+}
+
+async function FFMemory_loadCloud(){
+  try{
+    var identity = await FFMemory._fetchFile("memory/identity.json");
+    var trajectory = await FFMemory._fetchFile("memory/trajectory.json");
+    var meta = await FFMemory._fetchFile("memory/meta.json");
+    var local = FFMemory.loadLocal();
+
+    FFMemory_renderSessions(local, document.getElementById("ff-memory-sessions"));
+    FFMemory_renderIdentity(identity.json, document.getElementById("ff-memory-identity"));
+    FFMemory_renderTrajectory(trajectory.json, document.getElementById("ff-memory-trajectory"));
+    FFMemory_renderMeta(meta.json, document.getElementById("ff-memory-meta"));
+  }catch(e){
+    FFLog("Memory tab load failed.");
+  }
+}
+
+// CHAMBER SWITCHING
+
+function switchChamber(id){
+  FFState.chamber = id;
+  document.querySelectorAll(".ff-chamber").forEach(c=>{
+    c.classList.remove("ff-active");
+  });
+  var target = document.getElementById("ff-chamber-" + id);
+  if(target) target.classList.add("ff-active");
+}
+
+// INIT
+
+window.onload = function(){
+  // sound toggle
+  var soundBtn = document.getElementById("ff-sound-toggle");
+  if(soundBtn){
+    soundBtn.onclick = function(){
+      FFSound.toggle();
     };
   }
 
-  // Decision: Evaluate button
-  var decBtn = document.getElementById("ff-decision-eval");
-  if(decBtn){
-    decBtn.onclick = function(){
-      var aEl = document.getElementById("ff-decision-a");
-      var bEl = document.getElementById("ff-decision-b");
-      var dOut = document.getElementById("ff-decision-output");
-      if(aEl && bEl && dOut){
-        dOut.textContent = FFEngines.decision(aEl.value, bEl.value);
-        FFSound.playEvent("decision-eval");
-        FFLog("Decision evaluated.");
+  // tabs
+  document.querySelectorAll(".ff-console-tab").forEach(tab=>{
+    tab.onclick = function(){
+      var name = this.dataset.tab;
+
+      document.querySelectorAll(".ff-console-panel").forEach(p=>p.classList.remove("ff-active"));
+      document.querySelectorAll(".ff-console-tab").forEach(t=>t.classList.remove("ff-active"));
+
+      this.classList.add("ff-active");
+      var panel = document.getElementById("ff-panel-" + name);
+      if(panel) panel.classList.add("ff-active");
+
+      if(name === "memory"){
+        FFMemory_loadCloud();
       }
     };
-  }
+  });
 
-  // Identity: Affirm button
-  var idBtn = document.getElementById("ff-identity-affirm");
-  if(idBtn){
-    idBtn.onclick = function(){
-      var iEl = document.getElementById("ff-identity-input");
-      var iOut = document.getElementById("ff-identity-output");
-      if(iEl && iOut){
-        iOut.textContent = FFEngines.identity(iEl.value || "");
-        FFSound.playEvent("identity-affirm");
-        FFLog("Identity affirmed.");
+  // chamber navigation
+  document.querySelectorAll(".ff-next").forEach(btn=>{
+    btn.onclick = function(){
+      var next = this.dataset.next;
+      if(next){
+        switchChamber(next);
+        FFSound.playEvent("step");
       }
     };
-  }
+  });
 
-  // Ritual: Complete cycle
+  // ritual complete
   var ritualBtn = document.getElementById("ff-ritual-complete");
   var ritualGlow = document.getElementById("ff-ritual-glow");
   if(ritualBtn){
     ritualBtn.onclick = function(){
-      var step = FFState.index + 1;
-      var rSub = document.getElementById("ff-ritual-sub");
-      if(rSub){
-        rSub.textContent = FFEngines.ritual(step);
+      var sub = document.getElementById("ff-ritual-sub");
+      if(sub){
+        sub.textContent = "Cycle captured. Returning to Baseline.";
       }
       if(ritualGlow){
-        ritualGlow.className = "ff-ritual-glow ff-on";
+        ritualGlow.classList.add("ff-on");
       }
       FFSound.playEvent("ritual-complete");
-      FFLog("Cycle completed. Returning to Baseline.");
+      FFLog("Cycle completed. Capturing memory…");
+
+      FFMemory.persistCycle();
+
       setTimeout(function(){
         if(ritualGlow){
-          ritualGlow.className = "ff-ritual-glow";
+          ritualGlow.classList.remove("ff-on");
         }
         switchChamber("baseline");
       }, 1200);
     };
   }
 
+  // start at baseline
+  switchChamber("baseline");
+
+  // log local memory presence
+  var last = FFMemory.loadLocal();
+  if(last){
+    FFLog("Memory: local snapshot from " + last.timestamp);
+  }
 };
