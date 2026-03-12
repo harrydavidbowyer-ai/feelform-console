@@ -2,161 +2,147 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>FeelForm Console</title>
-  <link rel="stylesheet" href="style.css">
+  <title>FeelForm OS v4.1</title>
+  <link rel="stylesheet" href="ff-style.css">
 </head>
 <body>
 
-<div id="ff-shell">
+<div id="ff-root">
 
-  <!-- NAV DOTS -->
-  <div id="ff-nav">
-    <div id="nav-baseline"   class="ff-nav-glyph is-active"></div>
-    <div id="nav-threshold"  class="ff-nav-glyph"></div>
-    <div id="nav-pulse"      class="ff-nav-glyph"></div>
-    <div id="nav-somatic"    class="ff-nav-glyph"></div>
-    <div id="nav-reflection" class="ff-nav-glyph"></div>
-    <div id="nav-decision"   class="ff-nav-glyph"></div>
-    <div id="nav-identity"   class="ff-nav-glyph"></div>
-    <div id="nav-ritual"     class="ff-nav-glyph"></div>
-  </div>
+  <!-- HEADER / CONSOLE STRIP -->
+  <header id="ff-header">
+    <div id="ff-logo">FEELFORM OS v4.1</div>
+    <div id="ff-header-center">CONSOLE</div>
+    <div id="ff-header-right">
+      <span id="ff-sound-label">Sound</span>
+      <button id="ff-sound-toggle">OFF</button>
+    </div>
+  </header>
 
-  <!-- OVERLAY LAYER (cinematic UI) -->
-  <div id="ff-overlay">
-    <!-- Threshold bar -->
-    <div id="ff-threshold-bar-wrap" class="ff-overlay-block">
-      <div id="ff-threshold-bar">
-        <div id="ff-threshold-handle"></div>
+  <!-- CONSOLE -->
+  <section id="ff-console">
+    <div id="ff-console-tabs">
+      <div class="ff-console-tab ff-active" data-tab="system">SYSTEM</div>
+      <div class="ff-console-tab" data-tab="coaching">COACHING</div>
+      <div class="ff-console-tab" data-tab="identity">IDENTITY</div>
+      <div class="ff-console-tab" data-tab="memory">MEMORY</div>
+    </div>
+
+    <div id="ff-console-panels">
+      <div class="ff-console-panel ff-active" id="ff-panel-system">
+        <div class="ff-console-block">
+          <h2>SYSTEM STATUS</h2>
+          <p>FeelForm OS v4.1 · Console spine online · Chambers linked · Memory engine attached.</p>
+        </div>
       </div>
-      <div class="ff-overlay-label">drag to cross threshold</div>
-    </div>
 
-    <!-- Pulse orb -->
-    <div id="ff-pulse-orb-wrap" class="ff-overlay-block">
-      <div id="ff-pulse-orb"></div>
-      <div class="ff-overlay-label">pulse</div>
-    </div>
+      <div class="ff-console-panel" id="ff-panel-coaching">
+        <div class="ff-console-block">
+          <h2>COACHING</h2>
+          <p>Use the chambers below to run a full cycle. The Console will track your arc.</p>
+        </div>
+      </div>
 
-    <!-- Ritual completion glow -->
-    <div id="ff-ritual-glow-wrap" class="ff-overlay-block">
+      <div class="ff-console-panel" id="ff-panel-identity">
+        <div class="ff-console-block">
+          <h2>IDENTITY</h2>
+          <p>Identity statements are tracked over time in the Memory Engine.</p>
+        </div>
+      </div>
+
+      <div class="ff-console-panel" id="ff-panel-memory">
+        <div class="ff-memory-section">
+          <h2 class="ff-memory-title">Memory</h2>
+
+          <div class="ff-memory-block">
+            <h3>Sessions</h3>
+            <div id="ff-memory-sessions" class="ff-memory-list"></div>
+          </div>
+
+          <div class="ff-memory-block">
+            <h3>Identity Drift</h3>
+            <div id="ff-memory-identity" class="ff-memory-list"></div>
+          </div>
+
+          <div class="ff-memory-block">
+            <h3>Trajectory</h3>
+            <div id="ff-memory-trajectory" class="ff-memory-list"></div>
+          </div>
+
+          <div class="ff-memory-block">
+            <h3>Meta</h3>
+            <div id="ff-memory-meta" class="ff-memory-list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CHAMBERS -->
+  <main id="ff-chambers">
+
+    <!-- BASELINE -->
+    <section class="ff-chamber ff-active" id="ff-chamber-baseline">
+      <h1>Baseline</h1>
+      <p>Where am I, right now, in my body and life?</p>
+      <button class="ff-next" data-next="pulse">ENTER PULSE</button>
+    </section>
+
+    <!-- PULSE -->
+    <section class="ff-chamber" id="ff-chamber-pulse">
+      <h1>Pulse</h1>
+      <p>What is the live headline of this moment?</p>
+      <textarea id="ff-pulse-input" placeholder="Write the pulse here..."></textarea>
+      <button class="ff-next" data-next="somatic">ENTER SOMATIC</button>
+    </section>
+
+    <!-- SOMATIC -->
+    <section class="ff-chamber" id="ff-chamber-somatic">
+      <h1>Somatic</h1>
+      <p>Where is this living in your body?</p>
+      <input id="ff-somatic-location" placeholder="Location (chest, gut, throat...)" />
+      <label class="ff-range-label">
+        Intensity
+        <input type="range" id="ff-somatic-intensity" min="0" max="100" value="40">
+      </label>
+      <button class="ff-next" data-next="reflect">ENTER REFLECTION</button>
+    </section>
+
+    <!-- REFLECTION -->
+    <section class="ff-chamber" id="ff-chamber-reflect">
+      <h1>Reflection</h1>
+      <p>What is this really about?</p>
+      <textarea id="ff-reflect-input" placeholder="Let the reflection land..."></textarea>
+      <button class="ff-next" data-next="decision">ENTER DECISION</button>
+    </section>
+
+    <!-- DECISION -->
+    <section class="ff-chamber" id="ff-chamber-decision">
+      <h1>Decision</h1>
+      <p>What shifts now?</p>
+      <input id="ff-decision-a" placeholder="Path A" />
+      <input id="ff-decision-b" placeholder="Path B" />
+      <button class="ff-next" data-next="identity">ENTER IDENTITY</button>
+    </section>
+
+    <!-- IDENTITY -->
+    <section class="ff-chamber" id="ff-chamber-identity">
+      <h1>Identity</h1>
+      <p>Who am I becoming, if I honor this?</p>
+      <textarea id="ff-identity-input" placeholder="I am becoming someone who..."></textarea>
+      <button class="ff-next" data-next="ritual">ENTER RITUAL</button>
+    </section>
+
+    <!-- RITUAL -->
+    <section class="ff-chamber" id="ff-chamber-ritual">
+      <h1>Ritual</h1>
+      <p>Let this cycle complete.</p>
+      <div id="ff-ritual-sub">When you’re ready, close this cycle.</div>
       <div id="ff-ritual-glow"></div>
-      <div class="ff-overlay-label">completion</div>
-    </div>
-  </div>
+      <button id="ff-ritual-complete">COMPLETE CYCLE</button>
+    </section>
 
-  <!-- CHAMBERS WRAPPER -->
-  <div id="ff-chambers">
-
-    <div id="ch-baseline" class="ff-chamber is-active">
-      <div class="ff-chamber-inner">
-        <h1>Baseline</h1>
-        <p>Arrive. Notice what is here without changing it.</p>
-        <button id="ff-baseline-arrive" class="ff-btn ff-btn-primary">
-          I’m here
-        </button>
-      </div>
-    </div>
-
-    <div id="ch-threshold" class="ff-chamber">
-      <div class="ff-chamber-inner">
-        <h1>Threshold</h1>
-        <p>Standing at the edge of a shift. Drag the bar to cross.</p>
-      </div>
-    </div>
-
-    <div id="ch-pulse" class="ff-chamber">
-      <div class="ff-chamber-inner">
-        <h1>Pulse</h1>
-        <p>What is alive in you right now?</p>
-        <input id="ff-pulse-input" placeholder="What’s alive in you?">
-      </div>
-    </div>
-
-    <div id="ch-somatic" class="ff-chamber">
-      <div class="ff-chamber-inner">
-        <h1>Somatic</h1>
-        <p>Where does this live in your body?</p>
-        <select id="ff-somatic-location">
-          <option value="">Choose a region…</option>
-          <option value="chest">Chest</option>
-          <option value="gut">Gut</option>
-          <option value="throat">Throat</option>
-          <option value="head">Head</option>
-        </select>
-        <label class="ff-slider-label">
-          Intensity
-          <input id="ff-somatic-intensity" type="range" min="0" max="100" value="30">
-        </label>
-        <div id="ff-somatic-output" class="ff-output-line"></div>
-      </div>
-    </div>
-
-    <div id="ch-reflection" class="ff-chamber">
-      <div class="ff-chamber-inner">
-        <h1>Reflection</h1>
-        <textarea id="ff-reflect-input" placeholder="Write what you’re noticing..."></textarea>
-        <button id="ff-reflect-distill" class="ff-btn">Distill</button>
-        <div id="ff-reflect-output" class="ff-output-line"></div>
-      </div>
-    </div>
-
-    <div id="ch-decision" class="ff-chamber">
-      <div class="ff-chamber-inner">
-        <h1>Decision</h1>
-        <input id="ff-decision-a" placeholder="Path A">
-        <input id="ff-decision-b" placeholder="Path B">
-        <button id="ff-decision-eval" class="ff-btn">Evaluate</button>
-        <div id="ff-decision-output" class="ff-output-line"></div>
-      </div>
-    </div>
-
-    <div id="ch-identity" class="ff-chamber">
-      <div class="ff-chamber-inner">
-        <h1>Identity</h1>
-        <input id="ff-identity-input" placeholder="I am becoming someone who...">
-        <button id="ff-identity-affirm" class="ff-btn">Affirm</button>
-        <div id="ff-identity-output" class="ff-output-line"></div>
-      </div>
-    </div>
-
-    <div id="ch-ritual" class="ff-chamber">
-      <div class="ff-chamber-inner">
-        <h1>Ritual</h1>
-        <div id="ff-ritual-sub" class="ff-output-line">Sequence completion will appear here.</div>
-        <button id="ff-ritual-complete" class="ff-btn ff-btn-primary">
-          Complete cycle
-        </button>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- CONSOLE TOGGLE -->
-  <div id="ff-console-toggle">CONSOLE</div>
-
-  <!-- CONSOLE PANEL -->
-  <div id="ff-console" class="ff-console">
-    <div class="ff-console-header">
-      <span>FeelForm Console</span>
-      <div class="ff-console-controls">
-        <div class="ff-console-sound">
-          <span>Sound</span>
-          <button id="ff-sound-toggle" class="ff-sound-toggle">OFF</button>
-        </div>
-        <div class="ff-console-timing">
-          <div id="timing-pulse" class="ff-console-timing-dot"></div>
-          <div id="timing-drift" class="ff-console-timing-dot"></div>
-        </div>
-      </div>
-    </div>
-    <div id="ff-log" class="ff-console-log"></div>
-  </div>
-
-  <!-- SAMPLE AUDIO (you can replace src with your own tiny files) -->
-  <audio id="snd-reflection" src="sounds/reflection-chime.mp3" preload="auto"></audio>
-  <audio id="snd-decision"   src="sounds/decision-click.mp3" preload="auto"></audio>
-  <audio id="snd-identity"   src="sounds/identity-shimmer.mp3" preload="auto"></audio>
-  <audio id="snd-ritual"     src="sounds/ritual-dissolve.mp3" preload="auto"></audio>
+  </main>
 
 </div>
 
