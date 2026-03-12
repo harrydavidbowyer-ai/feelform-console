@@ -27,6 +27,92 @@ window.onload = function(){
     log.prepend(entry);
   }
 
+  // SOUND ENGINE (hybrid: synthetic + sampled)
+  var audioCtx = null;
+  function ensureAudioCtx(){
+    if(!audioCtx){
+      try{
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }catch(e){}
+    }
+  }
+
+  var FFSound = {
+    enabled: true,
+    setEnabled: function(on){
+      this.enabled = !!on;
+      try{
+        localStorage.setItem("ff-sound-enabled", this.enabled ? "1" : "0");
+      }catch(e){}
+    },
+    loadPreference: function(){
+      try{
+        var v = localStorage.getItem("ff-sound-enabled");
+        if(v === "0") this.enabled = false;
+        if(v === "1") this.enabled = true;
+      }catch(e){}
+    },
+    playTone: function(freq, dur){
+      if(!this.enabled) return;
+      ensureAudioCtx();
+      if(!audioCtx) return;
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      gain.gain.value = 0.12;
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      setTimeout(function(){
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.15);
+        osc.stop(audioCtx.currentTime + 0.16);
+      }, dur || 120);
+    },
+    playSample: function(id){
+      if(!this.enabled) return;
+      var el = document.getElementById(id);
+      if(!el) return;
+      el.currentTime = 0;
+      el.volume = 0.35;
+      el.play().catch(function(){});
+    },
+    playEvent: function(name){
+      if(!this.enabled) return;
+      switch(name){
+        case "baseline-arrive":
+          this.playTone(180, 140);
+          break;
+        case "threshold-cross":
+          this.playTone(260, 180);
+          break;
+        case "pulse-type":
+          this.playTone(420, 60);
+          break;
+        case "somatic-move":
+          this.playTone(120, 80);
+          break;
+        case "reflection-distill":
+          this.playSample("snd-reflection");
+          break;
+        case "decision-eval":
+          this.playSample("snd-decision");
+          break;
+        case "identity-affirm":
+          this.playSample("snd-identity");
+          break;
+        case "ritual-complete":
+          this.playSample("snd-ritual");
+          break;
+        case "transition":
+          this.playTone(220, 80);
+          break;
+      }
+    }
+  };
+
+  FFSound.loadPreference();
+
   // ENGINES
   var FFEngines = {
 
@@ -73,9 +159,10 @@ window.onload = function(){
 
   };
 
-  // CONSOLE TOGGLE
+  // CONSOLE TOGGLE + SOUND TOGGLE
   var toggle = document.getElementById("ff-console-toggle");
   var panel = document.getElementById("ff-console");
+  var soundToggle = document.getElementById("ff-sound-toggle");
 
   toggle.onclick = function(){
     if(panel.className.indexOf("is-open")>-1){
@@ -83,6 +170,24 @@ window.onload = function(){
     } else {
       panel.className = "ff-console is-open";
     }
+  };
+
+  function refreshSoundToggle(){
+    if(!soundToggle) return;
+    if(FFSound.enabled){
+      soundToggle.className = "ff-sound-toggle is-on";
+      soundToggle.textContent = "ON";
+    }else{
+      soundToggle.className = "ff-sound-toggle";
+      soundToggle.textContent = "OFF";
+    }
+  }
+  refreshSoundToggle();
+
+  soundToggle.onclick = function(){
+    FFSound.setEnabled(!FFSound.enabled);
+    refreshSoundToggle();
+    FFSound.playEvent("transition");
   };
 
   // CHAMBERS + NAV
@@ -151,6 +256,8 @@ window.onload = function(){
     var to   = target;
 
     FFLog("Transition: " + from + " → " + to);
+    FFSound.playEvent("transition");
+
     FFState.history.push(from);
     FFState.current = to;
     FFState.index = FFState.pipeline.indexOf(to);
@@ -187,9 +294,8 @@ window.onload = function(){
         if(to === "reflection"){
           var rIn = document.getElementById("ff-reflect-input");
           var rOut = document.getElementById("ff-reflect-output");
-          if(rIn && rOut){
-            var rVal = rIn.value || "";
-            rOut.textContent = FFEngines.reflection(rVal);
+          if(rIn && rOut && rIn.value){
+            rOut.textContent = FFEngines.reflection(rIn.value);
           }
         }
 
@@ -197,7 +303,7 @@ window.onload = function(){
           var aEl = document.getElementById("ff-decision-a");
           var bEl = document.getElementById("ff-decision-b");
           var dOut = document.getElementById("ff-decision-output");
-          if(aEl && bEl && dOut){
+          if(aEl && bEl && dOut && (aEl.value || bEl.value)){
             dOut.textContent = FFEngines.decision(aEl.value, bEl.value);
           }
         }
@@ -205,7 +311,7 @@ window.onload = function(){
         if(to === "identity"){
           var iEl = document.getElementById("ff-identity-input");
           var iOut = document.getElementById("ff-identity-output");
-          if(iEl && iOut){
+          if(iEl && iOut && iEl.value){
             iOut.textContent = FFEngines.identity(iEl.value);
           }
         }
@@ -234,9 +340,6 @@ window.onload = function(){
     })(chambers[k]);
   }
 
-  // initial state
-  switchChamber("baseline");
-
   // TIMING DOTS
   var pulseDot = document.getElementById("timing-pulse");
   var driftDot = document.getElementById("timing-drift");
@@ -255,5 +358,165 @@ window.onload = function(){
     }
 
   },1000);
+
+  // INITIAL STATE
+  switchChamber("baseline");
+
+  // CINEMATIC INTERACTIONS
+
+  // Baseline: arrival button
+  var baselineBtn = document.getElementById("ff-baseline-arrive");
+  if(baselineBtn){
+    baselineBtn.onclick = function(){
+      FFLog("Arrival acknowledged.");
+      FFSound.playEvent("baseline-arrive");
+      switchChamber("threshold");
+    };
+  }
+
+  // Threshold: drag bar
+  var thresholdBar = document.getElementById("ff-threshold-bar");
+  var thresholdHandle = document.getElementById("ff-threshold-handle");
+  var dragging = false;
+  var barRect = null;
+
+  function startDrag(e){
+    dragging = true;
+    barRect = thresholdBar.getBoundingClientRect();
+    e.preventDefault();
+  }
+  function moveDrag(e){
+    if(!dragging) return;
+    var clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    var rel = (clientX - barRect.left) / barRect.width;
+    if(rel < 0) rel = 0;
+    if(rel > 1) rel = 1;
+    thresholdHandle.style.left = (rel * 100) + "%";
+    if(rel > 0.96){
+      dragging = false;
+      thresholdBar.className = "ff-threshold-bar ff-crossed";
+      FFLog("Threshold crossed.");
+      FFSound.playEvent("threshold-cross");
+      setTimeout(function(){
+        switchChamber("pulse");
+      }, 220);
+    }
+  }
+  function endDrag(){
+    dragging = false;
+  }
+
+  if(thresholdHandle && thresholdBar){
+    thresholdHandle.addEventListener("mousedown", startDrag);
+    thresholdHandle.addEventListener("touchstart", startDrag, {passive:false});
+    window.addEventListener("mousemove", moveDrag);
+    window.addEventListener("touchmove", moveDrag, {passive:false});
+    window.addEventListener("mouseup", endDrag);
+    window.addEventListener("touchend", endDrag);
+  }
+
+  // Pulse: orb reacts to typing
+  var pulseInput = document.getElementById("ff-pulse-input");
+  var pulseOrb = document.getElementById("ff-pulse-orb");
+  if(pulseInput && pulseOrb){
+    pulseInput.addEventListener("input", function(){
+      var len = (pulseInput.value || "").length;
+      if(len > 0){
+        pulseOrb.className = "ff-pulse-orb ff-pulse-strong";
+        FFSound.playEvent("pulse-type");
+      }else{
+        pulseOrb.className = "ff-pulse-orb";
+      }
+      FFLog("Pulse registered: " + (pulseInput.value || "").slice(0,80));
+    });
+  }
+
+  // Somatic: slider + body map
+  var somLoc = document.getElementById("ff-somatic-location");
+  var somInt = document.getElementById("ff-somatic-intensity");
+  var somOut = document.getElementById("ff-somatic-output");
+
+  function updateSomatic(){
+    if(!somOut) return;
+    var loc = somLoc ? somLoc.value : "";
+    var val = somInt ? somInt.value : "0";
+    if(loc){
+      somOut.textContent = "Somatic intensity: " + val + " (" + loc + ")";
+    }else{
+      somOut.textContent = "Somatic intensity: " + val;
+    }
+    FFSound.playEvent("somatic-move");
+    FFLog("Somatic intensity: " + val + (loc ? " ("+loc+")" : ""));
+  }
+
+  if(somLoc) somLoc.addEventListener("change", updateSomatic);
+  if(somInt) somInt.addEventListener("input", updateSomatic);
+
+  // Reflection: Distill button
+  var refBtn = document.getElementById("ff-reflect-distill");
+  if(refBtn){
+    refBtn.onclick = function(){
+      var rIn = document.getElementById("ff-reflect-input");
+      var rOut = document.getElementById("ff-reflect-output");
+      if(rIn && rOut){
+        rOut.textContent = FFEngines.reflection(rIn.value || "");
+        FFSound.playEvent("reflection-distill");
+        FFLog("Reflection distilled.");
+      }
+    };
+  }
+
+  // Decision: Evaluate button
+  var decBtn = document.getElementById("ff-decision-eval");
+  if(decBtn){
+    decBtn.onclick = function(){
+      var aEl = document.getElementById("ff-decision-a");
+      var bEl = document.getElementById("ff-decision-b");
+      var dOut = document.getElementById("ff-decision-output");
+      if(aEl && bEl && dOut){
+        dOut.textContent = FFEngines.decision(aEl.value, bEl.value);
+        FFSound.playEvent("decision-eval");
+        FFLog("Decision evaluated.");
+      }
+    };
+  }
+
+  // Identity: Affirm button
+  var idBtn = document.getElementById("ff-identity-affirm");
+  if(idBtn){
+    idBtn.onclick = function(){
+      var iEl = document.getElementById("ff-identity-input");
+      var iOut = document.getElementById("ff-identity-output");
+      if(iEl && iOut){
+        iOut.textContent = FFEngines.identity(iEl.value || "");
+        FFSound.playEvent("identity-affirm");
+        FFLog("Identity affirmed.");
+      }
+    };
+  }
+
+  // Ritual: Complete cycle
+  var ritualBtn = document.getElementById("ff-ritual-complete");
+  var ritualGlow = document.getElementById("ff-ritual-glow");
+  if(ritualBtn){
+    ritualBtn.onclick = function(){
+      var step = FFState.index + 1;
+      var rSub = document.getElementById("ff-ritual-sub");
+      if(rSub){
+        rSub.textContent = FFEngines.ritual(step);
+      }
+      if(ritualGlow){
+        ritualGlow.className = "ff-ritual-glow ff-on";
+      }
+      FFSound.playEvent("ritual-complete");
+      FFLog("Cycle completed. Returning to Baseline.");
+      setTimeout(function(){
+        if(ritualGlow){
+          ritualGlow.className = "ff-ritual-glow";
+        }
+        switchChamber("baseline");
+      }, 1200);
+    };
+  }
 
 };
