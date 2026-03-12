@@ -26,6 +26,58 @@
 
   <!-- CONSOLE -->
   <section id="ff-console">
+    <!-- MEMORY tab trigger in your existing nav -->
+<div class="ff-tab" data-ff-tab="memory">MEMORY</div>
+
+<!-- MEMORY viewer somewhere in your Console layout -->
+<section class="ff-memory-shell">
+  <div class="ff-memory-grid">
+    <article class="ff-memory-panel">
+      <header>IDENTITY</header>
+      <pre data-ff-memory="identity">{}</pre>
+    </article>
+    <article class="ff-memory-panel">
+      <header>TRAJECTORY</header>
+      <pre data-ff-memory="trajectory">{}</pre>
+    </article>
+    <article class="ff-memory-panel">
+      <header>META</header>
+      <pre data-ff-memory="meta">{}</pre>
+    </article>
+  </div>
+
+  <div class="ff-memory-inputs">
+    <div>
+      <label>Pulse</label>
+      <input data-ff-input="pulse" type="text" />
+    </div>
+    <div>
+      <label>Somatic</label>
+      <input data-ff-input="somatic" type="text" />
+    </div>
+    <div>
+      <label>Amplitude</label>
+      <input data-ff-input="amplitude" type="number" step="0.01" />
+    </div>
+    <div>
+      <label>Reflection</label>
+      <textarea data-ff-input="reflection" rows="2"></textarea>
+    </div>
+    <div>
+      <label>Decision</label>
+      <textarea data-ff-input="decision" rows="2"></textarea>
+    </div>
+    <div>
+      <label>Identity</label>
+      <textarea data-ff-input="identity" rows="2"></textarea>
+    </div>
+  </div>
+
+  <div class="ff-memory-controls">
+    <button data-ff-action="complete-cycle">Complete Cycle</button>
+    <span data-ff-status="memory"></span>
+  </div>
+</section>
     <div id="ff-console-tabs">
       <div class="ff-console-tab ff-active" data-tab="system">SYSTEM</div>
       <div class="ff-console-tab" data-tab="coaching">COACHING</div>
