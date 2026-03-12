@@ -32,6 +32,24 @@ body {
     "Segoe UI", sans-serif;
 }
 
+/* EMBED WRAPPER */
+.ff-embed-wrapper {
+  width: 100%;
+  height: 100vh; /* full viewport height */
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: #000; /* matches your OS baseline */
+}
+
+/* EMBED IFRAME */
+.ff-embed-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+  overflow: hidden;
+}
 /* IDENTITY GLOW */
 #ff-identity-glow {
   height: 50px;
