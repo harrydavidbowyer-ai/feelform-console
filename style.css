@@ -29,7 +29,7 @@ body{
   display:flex;
   flex-direction:column;
   gap:10px;
-  z-index:10;
+  z-index:20;
 }
 
 .ff-nav-glyph{
@@ -93,18 +93,20 @@ body{
 .ff-chamber-inner p{
   font-size:16px;
   color:#c7c7c7;
+  margin-bottom:12px;
 }
 
 /* Inputs / outputs */
 
 textarea,
-input{
+input,
+select{
   width:100%;
   background:#0b0d12;
   border:1px solid #222;
   color:#f5f5f5;
   padding:10px 12px;
-  margin-top:12px;
+  margin-top:8px;
   border-radius:4px;
   font-size:14px;
 }
@@ -118,6 +120,183 @@ textarea{
   margin-top:10px;
   font-size:14px;
   color:#a7a7ff;
+}
+
+/* Buttons */
+
+.ff-btn{
+  margin-top:12px;
+  padding:8px 16px;
+  border-radius:999px;
+  border:1px solid #444;
+  background:rgba(10,12,18,0.9);
+  color:#f5f5f5;
+  font-size:12px;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  cursor:pointer;
+  transition:background 0.2s ease, transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ff-btn-primary{
+  border-color:#a7a7ff;
+  box-shadow:0 0 12px rgba(167,167,255,0.25);
+}
+
+.ff-btn:hover{
+  background:#151824;
+  transform:translateY(-1px);
+}
+
+.ff-btn:active{
+  transform:translateY(0);
+}
+
+/* Slider */
+
+.ff-slider-label{
+  display:block;
+  margin-top:12px;
+  font-size:13px;
+  color:#c7c7c7;
+}
+
+#ff-somatic-intensity{
+  margin-top:6px;
+  width:100%;
+}
+
+/* Overlay cinematic layer */
+
+#ff-overlay{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  z-index:15;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  padding:40px 80px;
+}
+
+.ff-overlay-block{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+/* Threshold bar */
+
+#ff-threshold-bar-wrap{
+  opacity:0;
+  transition:opacity 0.3s ease;
+}
+
+#ch-threshold.is-active ~ #ff-overlay #ff-threshold-bar-wrap,
+#ff-threshold-bar-wrap.ff-visible{
+  opacity:1;
+}
+
+#ff-threshold-bar{
+  position:relative;
+  width:260px;
+  height:4px;
+  background:rgba(255,255,255,0.08);
+  border-radius:999px;
+  overflow:hidden;
+}
+
+#ff-threshold-bar::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(90deg, rgba(167,167,255,0.0), rgba(167,167,255,0.6));
+  transform:translateX(-100%);
+  transition:transform 0.4s ease;
+}
+
+#ff-threshold-bar.ff-crossed::before{
+  transform:translateX(0);
+}
+
+#ff-threshold-handle{
+  position:absolute;
+  top:50%;
+  left:0;
+  width:14px;
+  height:14px;
+  border-radius:50%;
+  background:#f5f5f5;
+  transform:translate(-50%,-50%);
+  box-shadow:0 0 10px rgba(255,255,255,0.4);
+  cursor:pointer;
+  pointer-events:auto;
+}
+
+/* Pulse orb */
+
+#ff-pulse-orb-wrap{
+  justify-content:flex-end;
+  opacity:0;
+  transition:opacity 0.3s ease;
+}
+
+#ch-pulse.is-active ~ #ff-overlay #ff-pulse-orb-wrap,
+#ff-pulse-orb-wrap.ff-visible{
+  opacity:1;
+}
+
+#ff-pulse-orb{
+  width:26px;
+  height:26px;
+  border-radius:50%;
+  background:radial-gradient(circle at 30% 30%, #ffffff, #a7a7ff);
+  box-shadow:0 0 18px rgba(167,167,255,0.45);
+  transform:scale(0.9);
+  transition:transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+#ff-pulse-orb.ff-pulse-strong{
+  transform:scale(1.25);
+  box-shadow:0 0 26px rgba(167,167,255,0.7);
+}
+
+/* Ritual glow */
+
+#ff-ritual-glow-wrap{
+  justify-content:center;
+  opacity:0;
+  transition:opacity 0.4s ease;
+}
+
+#ch-ritual.is-active ~ #ff-overlay #ff-ritual-glow-wrap,
+#ff-ritual-glow-wrap.ff-visible{
+  opacity:1;
+}
+
+#ff-ritual-glow{
+  width:120px;
+  height:120px;
+  border-radius:50%;
+  border:1px solid rgba(167,167,255,0.4);
+  box-shadow:0 0 40px rgba(167,167,255,0.35);
+  opacity:0;
+  transform:scale(0.8);
+  transition:opacity 0.6s ease, transform 0.6s ease;
+}
+
+#ff-ritual-glow.ff-on{
+  opacity:1;
+  transform:scale(1.05);
+}
+
+/* Overlay labels */
+
+.ff-overlay-label{
+  font-size:11px;
+  letter-spacing:0.16em;
+  text-transform:uppercase;
+  color:#888;
 }
 
 /* directional / depth variants (subtle) */
@@ -155,14 +334,14 @@ textarea{
   cursor:pointer;
   color:#ddd;
   background:rgba(5,6,10,0.8);
-  z-index:20;
+  z-index:30;
 }
 
 .ff-console{
   position:absolute;
   right:24px;
   bottom:60px;
-  width:320px;
+  width:340px;
   max-height:50vh;
   background:rgba(5,6,10,0.96);
   border:1px solid #222;
@@ -170,7 +349,7 @@ textarea{
   display:none;
   flex-direction:column;
   overflow:hidden;
-  z-index:19;
+  z-index:29;
 }
 
 .ff-console.is-open{
@@ -187,6 +366,36 @@ textarea{
   letter-spacing:0.12em;
   text-transform:uppercase;
   color:#aaa;
+}
+
+.ff-console-controls{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.ff-console-sound{
+  display:flex;
+  align-items:center;
+  gap:4px;
+  font-size:10px;
+}
+
+.ff-sound-toggle{
+  padding:2px 8px;
+  border-radius:999px;
+  border:1px solid #444;
+  background:#0b0d12;
+  color:#ddd;
+  font-size:9px;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  cursor:pointer;
+}
+
+.ff-sound-toggle.is-on{
+  border-color:#a7a7ff;
+  color:#a7a7ff;
 }
 
 .ff-console-timing{
