@@ -1,57 +1,87 @@
 import express from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
-import { writeSession, readMemory } from "./memory-engine.js";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-app.use(cors());
+// -----------------------------
+// CORS — THIS FIXES YOUR ERROR
+// -----------------------------
+app.use(
+  cors({
+    origin: [
+      "https://harrydavidbowyer-ai.github.io", // your GitHub Pages frontend
+      "http://localhost:3000",                 // local dev
+      "http://localhost:4000"
+    ],
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type"]
+  })
+);
+
+// -----------------------------
+// Middleware
+// -----------------------------
 app.use(bodyParser.json());
 
-// write a new session
+// -----------------------------
+// In-memory store (Render resets on redeploy)
+// -----------------------------
+let memory = {
+  sessions: [],
+  identity: [],
+  trajectory: [],
+  meta: {
+    total_cycles: 0,
+    last_cycle: null
+  }
+};
+
+// -----------------------------
+// POST /api/session
+// Store a new cycle
+// -----------------------------
 app.post("/api/session", (req, res) => {
-  try {
-    const { pulse, somatic, reflection, decision, identity, amplitude } = req.body;
+  const cycle = req.body;
 
-    if (
-      pulse == null ||
-      somatic == null ||
-      reflection == null ||
-      decision == null ||
-      identity == null ||
-      amplitude == null
-    ) {
-      return res.status(400).json({ error: "Missing fields" });
-    }
+  // Store session
+  memory.sessions.push(cycle);
 
-    const result = writeSession({
-      pulse,
-      somatic,
-      reflection,
-      decision,
-      identity,
-      amplitude
-    });
-
-    res.json(result);
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: "Internal error" });
+  // Identity drift
+  if (cycle.identity) {
+    memory.identity.push(cycle.identity);
   }
+
+  // Trajectory (pulse → reflection → identity)
+  const trajectoryPoint = `${cycle.pulse} → ${cycle.reflection} → ${cycle.identity}`;
+  memory.trajectory.push(trajectoryPoint);
+
+  // Meta
+  memory.meta.total_cycles = memory.sessions.length;
+  memory.meta.last_cycle = cycle;
+
+  res.json({ status: "ok", stored: cycle });
 });
 
-// read memory
+// -----------------------------
+// GET /api/memory
+// Return the entire memory object
+// -----------------------------
 app.get("/api/memory", (req, res) => {
-  try {
-    const data = readMemory();
-    res.json(data);
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: "Internal error" });
-  }
+  res.json(memory);
 });
 
+// -----------------------------
+// Root
+// -----------------------------
+app.get("/", (req, res) => {
+  res.send("FeelForm Memory Engine is running.");
+});
+
+// -----------------------------
+// Start server
+// -----------------------------
 app.listen(PORT, () => {
-  console.log(`Memory Engine API running on port ${PORT}`);
+  console.log(`Memory Engine running on port ${PORT}`);
 });
