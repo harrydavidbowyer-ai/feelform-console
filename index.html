@@ -35,6 +35,8 @@
     </div>
 
     <div id="ff-console-panels">
+
+      <!-- SYSTEM PANEL -->
       <div class="ff-console-panel ff-active" id="ff-panel-system">
         <div class="ff-console-block">
           <h2>SYSTEM STATUS</h2>
@@ -42,6 +44,7 @@
         </div>
       </div>
 
+      <!-- COACHING PANEL -->
       <div class="ff-console-panel" id="ff-panel-coaching">
         <div class="ff-console-block">
           <h2>COACHING</h2>
@@ -49,6 +52,7 @@
         </div>
       </div>
 
+      <!-- IDENTITY PANEL -->
       <div class="ff-console-panel" id="ff-panel-identity">
         <div class="ff-console-block">
           <h2>IDENTITY</h2>
@@ -56,10 +60,46 @@
         </div>
       </div>
 
+      <!-- MEMORY PANEL -->
       <div class="ff-console-panel" id="ff-panel-memory">
         <div class="ff-memory-section">
           <h2 class="ff-memory-title">Memory</h2>
 
+          <!-- MEMORY ENGINE INPUTS -->
+          <div class="ff-memory-inputs">
+            <div>
+              <label>Pulse</label>
+              <input data-ff-input="pulse" type="text" />
+            </div>
+            <div>
+              <label>Somatic</label>
+              <input data-ff-input="somatic" type="text" />
+            </div>
+            <div>
+              <label>Amplitude</label>
+              <input data-ff-input="amplitude" type="number" step="0.01" />
+            </div>
+            <div>
+              <label>Reflection</label>
+              <textarea data-ff-input="reflection" rows="2"></textarea>
+            </div>
+            <div>
+              <label>Decision</label>
+              <textarea data-ff-input="decision" rows="2"></textarea>
+            </div>
+            <div>
+              <label>Identity</label>
+              <textarea data-ff-input="identity" rows="2"></textarea>
+            </div>
+          </div>
+
+          <!-- COMPLETE CYCLE -->
+          <div class="ff-memory-controls">
+            <button data-ff-action="complete-cycle">Complete Cycle</button>
+            <span data-ff-status="memory"></span>
+          </div>
+
+          <!-- MEMORY VIEWER -->
           <div class="ff-memory-block">
             <h3>Sessions</h3>
             <pre id="ff-memory-sessions" class="ff-memory-list"></pre>
@@ -79,6 +119,7 @@
             <h3>Meta</h3>
             <pre id="ff-memory-meta" class="ff-memory-list"></pre>
           </div>
+
         </div>
       </div>
     </div>
@@ -147,94 +188,6 @@
 
 <!-- JS -->
 <script src="https://harrydavidbowyer-ai.github.io/feelform-console/ff-console.js"></script>
-
-<!-- Memory Engine wiring -->
-<script>
-  const FF_API_BASE = "https://feelform-console.onrender.com";
-
-  async function ffSendCycle() {
-    const pulse = document.getElementById("ff-pulse-input")?.value || "";
-    const somatic = document.getElementById("ff-somatic-location")?.value || "";
-    const reflection = document.getElementById("ff-reflect-input")?.value || "";
-    const decisionA = document.getElementById("ff-decision-a")?.value || "";
-    const decisionB = document.getElementById("ff-decision-b")?.value || "";
-    const identity = document.getElementById("ff-identity-input")?.value || "";
-    const intensity = parseFloat(document.getElementById("ff-somatic-intensity")?.value || "0");
-
-    const payload = {
-      pulse,
-      somatic,
-      reflection,
-      decision: `${decisionA} | ${decisionB}`.trim(),
-      identity,
-      amplitude: intensity / 100
-    };
-
-    const res = await fetch(FF_API_BASE + "/api/session", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-
-    return res.json();
-  }
-
-  async function ffLoadMemory() {
-    const res = await fetch(FF_API_BASE + "/api/memory");
-    return res.json();
-  }
-
-  async function ffRefreshMemoryPanel() {
-    try {
-      const data = await ffLoadMemory();
-      if (!data) return;
-
-      const sessionsEl = document.getElementById("ff-memory-sessions");
-      const identityEl = document.getElementById("ff-memory-identity");
-      const trajectoryEl = document.getElementById("ff-memory-trajectory");
-      const metaEl = document.getElementById("ff-memory-meta");
-
-      if (sessionsEl) {
-        const total = data.meta?.total_cycles ?? 0;
-        sessionsEl.textContent = total ? `Total cycles: ${total}` : "No sessions yet.";
-      }
-
-      if (identityEl) {
-        identityEl.textContent = JSON.stringify(data.identity, null, 2);
-      }
-
-      if (trajectoryEl) {
-        trajectoryEl.textContent = JSON.stringify(data.trajectory, null, 2);
-      }
-
-      if (metaEl) {
-        metaEl.textContent = JSON.stringify(data.meta, null, 2);
-      }
-    } catch (e) {
-      console.error("Error refreshing memory panel:", e);
-    }
-  }
-
-  document.addEventListener("DOMContentLoaded", () => {
-    const ritualBtn = document.getElementById("ff-ritual-complete");
-    if (ritualBtn) {
-      ritualBtn.addEventListener("click", async () => {
-        await ffSendCycle();
-        await ffRefreshMemoryPanel();
-      });
-    }
-
-    const memoryTab = document.querySelector(".ff-console-tab[data-tab='memory']");
-    if (memoryTab) {
-      memoryTab.addEventListener("click", () => {
-        ffRefreshMemoryPanel();
-      });
-    }
-
-    // initial load (in case memory already exists)
-    ffRefreshMemoryPanel();
-  });
-</script>
 
 </body>
 </html>
